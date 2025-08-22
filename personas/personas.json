@@ -1,0 +1,62 @@
+{
+  "kyle": {
+    "firstName": "Kyle",
+    "photo": "kyle.png",
+    "teamName": "The Losing Edge",
+    "vibe": "metalhead, guy who wears hats all the time, homeless look",
+    "hates": "church, ",
+    "loves": "South Park, Miami Dolphins, PNW",
+    "colors_codes": ["#008E98", "#F78200"],
+    "occupation": "Software Engineer",
+    "notes": "championship drought, league commish"
+  },
+  "james": {
+    "firstName": "James",
+    "photo": "james.jpg",
+    "teamName": "BAD NEWS FOR ERICA",
+    "vibe": "tattoos, punk rocker, military brat",
+    "hates": "being called Fred Durst, ",
+    "loves": "punk music, sports, playing soccer",
+    "colors_codes": ["#007FC8", "#F0AE00"],
+    "occupation": "Restaurant Manager",
+    "notes": "Defending champion"
+  },
+  "jared": {
+    "firstName": "Jared",
+    "photo": "jared.jpg",
+    "teamName": "Cocktails and Dreams",
+    "vibe": "posh, luxury brands",
+    "hates": "losing",
+    "loves": "sports, gambling, money, sneakers",
+    "colors_codes": ["#1F3731", "#FFFFFF"],
+    "occupation": "Director of a chain of Rehab Facilities",
+    "notes": ""
+  },
+  "amy": {
+    "firstName": "Amy",
+    "photo": "amy.png",
+    "teamName": "F My Fantasy Football Team",
+    "vibe": "anxious, messy, likes the finer things in life",
+    "hates": "fighting kids, cleaning, traffic, hot weather",
+    "loves": "trees, cats/dogs, reddit, Kyle, tv",
+    "colors_codes": ["#66C010", "#002145"],
+    "occupation": "Homemaker",
+    "notes": "only three time champion, big bragger"
+  },
+  "kristyn": {
+    "firstName": "Kristyn",
+    "photo": "kristyn.jpg",
+    "teamName": "Flower Power",
+    "vibe": "weed smoker, ",
+    "hates": "",
+    "loves": "",
+    "colors_codes": ["#66C010", "#002145"],
+    "occupation": "Director of Operations",
+    "notes": ""
+  }
+}
+
+
+
+  
+}
