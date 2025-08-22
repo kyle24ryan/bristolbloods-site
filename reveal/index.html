@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Bristol Bloods Draft Reveal</title>
+<style>body{display:grid;place-items:center;height:100dvh;background:#0b0b0b;color:#fff;font:16px system-ui}</style>
+<form id=f>
+  <h1>Draft Reveal</h1>
+  <input name="name" placeholder="First name" required />
+  <button>Reveal</button>
+</form>
+<img id=img style="max-width:min(90vw,600px);display:none" />
+<script>
+f.onsubmit = async (e) => {
+  e.preventDefault();
+  const name = new FormData(f).get("name");
+  const url = "https://bristol-bloods-api.YOURNAME.workers.dev/reveal?name="+encodeURIComponent(name);
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const img = document.getElementById('img');
+  img.src = URL.createObjectURL(blob);
+  img.style.display = 'block';
+};
+</script>
