@@ -13,17 +13,17 @@
     min-height:100dvh; text-align:center; padding:40px 16px;
   }
 
-  /* Logo — scale slightly smaller */
-  .logo { margin-bottom: 14px; }
+  /* Logo with responsive swap */
+  .logo { margin-bottom: 6px; } /* tighter space below logo */
   .logo img {
-    width: clamp(220px, 60vw, 460px); /* smaller overall */
+    width: clamp(260px, 70vw, 520px);
     height:auto; display:block; margin:auto;
   }
 
   /* Subtitle */
-  .sub { margin: 0 0 26px; color:#b3b3b3; font-weight:600; letter-spacing:.2px; }
+  .sub { margin: 0 0 20px; color:#b3b3b3; font-weight:600; letter-spacing:.2px; }
 
-  /* Form row: unified look */
+  /* Form row: unified input + button */
   .form {
     display:flex; justify-content:center; align-items:stretch;
     width: min(92vw, 520px); margin: 0 auto 22px;
@@ -31,8 +31,7 @@
   .input {
     flex:1; padding:14px 16px; border:none;
     border-radius:12px 0 0 12px;
-    background:#0f0f0f; color:#fff;
-    font-size:16px; min-width: 160px;
+    background:#0f0f0f; color:#fff; font-size:16px;
   }
   .input::placeholder { color:#6b6b6b }
   .btn--primary {
@@ -63,7 +62,7 @@
   /* Mobile adjustments */
   @media(max-width:560px){
     body{ padding:30px 14px }
-    .logo img { width: clamp(180px, 70vw, 300px); } /* smaller logo */
+    .logo img { width: clamp(200px, 75vw, 360px); }
     .form{ flex-direction:column; gap:10px; }
     .input, .btn--primary{ border-radius:12px; width:100%; }
   }
