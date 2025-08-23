@@ -12,8 +12,8 @@
     display: grid; place-items: center;
   }
   .wrap { width:min(100vw, 980px); padding: 24px; text-align: center }
-  h1 { margin: 0 0 10px; font-size: clamp(28px, 6vw, 56px); letter-spacing: .5px }
-  p.sub { margin: 0 0 26px; color:#aaa }
+  /* removed H1 since logo carries the brand */
+  p.sub { margin: 8px 0 26px; color:#aaa }
   .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:18px 0 8px }
   input, button, a.btn {
     font: inherit; padding: 12px 14px; border-radius: 12px; border: 1px solid #2a2a2a;
@@ -23,20 +23,19 @@
   a.btn.secondary { background:#111 }
   .muted { color:#8b8b8b; font-size: 13px; margin-top: 10px }
   .logo {
-    width:min(90vw, 260px); height:260px; margin: 0 auto 14px;
-    background:
-      radial-gradient(120px 120px at 50% 30%, rgba(255,0,0,.12), transparent 70%),
-      radial-gradient(200px 200px at 80% 70%, rgba(255,0,0,.06), transparent 60%);
-    border-radius: 24px; border:1px solid #151515; display:grid; place-items:center;
+    width:min(90vw, 520px); /* wider to showcase the wide logo */
+    height:auto; margin: 0 auto 14px;
+    display:grid; place-items:center;
   }
-  .logo span { font-weight:900; font-size: 54px; color:#ff3b3b; letter-spacing:1px }
+  .logo img { width:100%; height:auto; display:block }
 </style>
 
 <div class="wrap">
-  <div class="logo"><span>🩸</span></div>
+  <div class="logo">
+    <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods" />
+  </div>
 
-  <h1>Bristol Bloods</h1>
-  <p class="sub">Fantasy Football • Draft Night Shenanigans</p>
+  <p class="sub">Labor Day Massacre — 7pm EST</p>
 
   <!-- Quick reveal form (builds /reveal/?name=...) -->
   <div class="row" id="revealRow">
@@ -46,8 +45,9 @@
 
   <!-- Secondary actions -->
   <div class="row">
-    <a class="btn secondary" href="/overview/">See the draft board</a>
-    <a class="btn secondary" href="/reveal/?autoplay=1&name=Kyle">Demo with Kyle</a>
+    <a class="btn secondary" href="/overview/">Draft Order</a>
+    <a claas="btn secondary" href="/keepers/">Keepers</a>
+    <a class="btn secondary" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank" rel="noopener">League Home</a>
   </div>
 
   <p class="muted">Tip: scan the QR at the party to land here, type your first name, and boom.</p>
@@ -58,9 +58,9 @@
   document.getElementById('go').onclick = () => {
     const name = (input.value || "").trim();
     if (!name) { input.focus(); return; }
-    // send them to the reveal page (which fetches from the API)
     location.href = `/reveal/?name=${encodeURIComponent(name)}`;
   };
-  // Hit Enter to submit
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('go').click();
+  });
 </script>
