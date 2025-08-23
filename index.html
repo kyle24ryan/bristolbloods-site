@@ -16,22 +16,24 @@
 
   /* Responsive logo sizing: scales by height, but never exceeds the viewport */
   .logo{
-    /* Height scales with viewport width; bounded for phone ↔ desktop */
     height: clamp(96px, 14vw, 220px);
-  
-    /* Width can grow, but capped so it never stretches too wide */
     width: min(92vw, 820px);
-  
     margin: 0 auto 16px;
     display: grid;
     place-items: center;
   }
   .logo img{
-    /* Fill the target height while keeping the wordmark’s aspect ratio */
     height: 100%;
     width: auto;
     max-width: 100%;
     display: block;
+  }
+  /* Swap logos by breakpoint */
+  .logo-wide   { display: block; }
+  .logo-stacked{ display: none;  }
+  @media (max-width: 560px){
+    .logo-wide   { display: none;  }
+    .logo-stacked{ display: block; }
   }
 
   /* Subtitle */
@@ -77,7 +79,8 @@
 
 <div class="wrap">
   <div class="logo">
-    <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
+    <img class="logo-wide"    src="/assets/logo-red-wide.svg"     alt="Bristol Bloods">
+    <img class="logo-stacked" src="/assets/logo-red-stacked.svg"  alt="Bristol Bloods">
   </div>
 
   <div class="sub">Labor Day Massacre — 7pm EST</div>
