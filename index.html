@@ -6,79 +6,89 @@
 
 <style>
   :root { color-scheme: dark }
-  html, body { height: 100%; margin:0 }
   body {
-    background:#000; color:#fff;
-    font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-    display:grid; place-items:center;
+    margin:0; background:#000; color:#fff;
+    font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100dvh; text-align:center; padding:40px 16px;
   }
-  .wrap { width:min(100vw, 820px); padding:28px; text-align:center }
 
-  /* Logo */
-  .logo { margin:0 auto 12px }
+  /* Logo with responsive swap */
+  .logo { margin-bottom: 2px; } /* tighter space below logo */
   .logo img {
-    width:100%; height:auto; max-width:600px;
-    display:block; margin:0 auto;
+    width: clamp(260px, 70vw, 520px);
+    height:auto; display:block; margin:auto;
   }
 
   /* Subtitle */
-  .sub { margin:4px 0 18px; color:#b3b3b3; font-weight:600 }
+  .sub { margin: 0 0 20px; color:#b3b3b3; font-weight:600; letter-spacing:.2px; }
 
-  /* Reveal row (input + button together) */
-  .reveal-row {
+  /* Form row: unified input + button */
+  .form {
     display:flex; justify-content:center; align-items:stretch;
-    gap:8px; width:100%; max-width:600px; margin:0 auto 22px;
+    width: min(92vw, 520px); margin: 0 auto 22px;
   }
   .input {
-    flex:1; padding:14px 16px;
-    border-radius:12px; border:1px solid #2a2a2a;
-    background:#0f0f0f; color:#fff;
+    flex:1; padding:14px 16px; border:none;
+    border-radius:12px 0 0 12px;
+    background:#0f0f0f; color:#fff; font-size:16px;
   }
   .input::placeholder { color:#6b6b6b }
-  .btn {
-    font-weight:700; padding:14px 18px; border-radius:12px;
-    border:1px solid transparent; cursor:pointer;
-    transition: filter .2s ease, transform .1s ease;
+  .btn--primary {
+    border:none; border-radius:0 12px 12px 0;
+    background:#e11; color:#fff; font-weight:700;
+    padding:0 20px; cursor:pointer;
+    transition: background .2s ease;
   }
-  .btn:active { transform:scale(.97) }
-  .btn--primary { background:#e11; border-color:#e11; color:#fff }
-  .btn--ghost { background:#151515; border:1px solid #2a2a2a; color:#fff }
-  .btn--ghost:hover { border-color:#3a3a3a }
+  .btn--primary:hover { background:#c00 }
 
-  /* Button row (3 buttons equal width) */
-  .btn-row {
-    display:grid; grid-template-columns:repeat(3,1fr);
-    gap:12px; width:100%; max-width:600px; margin:0 auto 16px;
+  /* CTA buttons */
+  .ctas {
+    display:flex; justify-content:center; flex-wrap:wrap; gap:12px;
+    margin-bottom:20px;
   }
+  .btn {
+    --bg:#151515; --bd:#2a2a2a;
+    flex:1 1 140px; max-width:180px;
+    padding:14px; border-radius:12px;
+    border:1px solid var(--bd); background:var(--bg); color:#fff;
+    text-decoration:none; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .btn:hover { border-color:#444 }
 
   .hint { color:#8b8b8b; font-size:13px }
 
-  /* Responsive logo swap */
-  @media(max-width:640px) {
-    .logo img { content:url("/assets/logo-red-stacked.svg"); max-width:360px; }
-    .reveal-row, .btn-row { max-width:360px }
+  /* Mobile adjustments */
+  @media(max-width:560px){
+    body{ padding:30px 14px }
+    .logo img { width: clamp(200px, 75vw, 360px); }
+    .form{ flex-direction:column; gap:10px; }
+    .input, .btn--primary{ border-radius:12px; width:100%; }
   }
 </style>
 
-<div class="wrap">
-  <div class="logo"><img src="/assets/logo-red-wide.svg" alt="Bristol Bloods"></div>
-  <div class="sub">Labor Day Massacre — 7pm EST</div>
-
-  <!-- Reveal form -->
-  <div class="reveal-row">
-    <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
-    <button id="go" class="btn btn--primary">Reveal my fate</button>
-  </div>
-
-  <!-- Button row -->
-  <div class="btn-row">
-    <a class="btn btn--ghost" href="/overview/">Draft Order</a>
-    <a class="btn btn--ghost" href="/keepers/">Keepers</a>
-    <a class="btn btn--ghost" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank">League Home</a>
-  </div>
-
-  <div class="hint">Disclaimer: Draft is subject to change.</div>
+<div class="logo">
+  <picture>
+    <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
+    <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
+  </picture>
 </div>
+
+<div class="sub">Labor Day Massacre — 7pm EST</div>
+
+<div class="form">
+  <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
+  <button id="go" class="btn--primary">Reveal my fate</button>
+</div>
+
+<div class="ctas">
+  <a class="btn" href="/overview/">Draft Order</a>
+  <a class="btn" href="/keepers/">Keepers</a>
+  <a class="btn" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank">League Home</a>
+</div>
+
+<div class="hint">Disclaimer: Draft is subject to change.</div>
 
 <script>
   const input = document.getElementById('name');
