@@ -59,6 +59,7 @@
   const loader = document.getElementById("loader");
   const img    = document.getElementById("card");
   const err    = document.getElementById("err");
+  const wrap   = document.querySelector(".wrap");
 
   function start() {
     if (!qs.get("name")) {
@@ -77,7 +78,13 @@
       loader.style.display = "none";
       img.hidden = false;
       requestAnimationFrame(() => img.classList.add("show"));
-      btn.classList.add("hidden");     // Hides the button after reveal
+      btn.classList.add("hidden"); // Hide the button
+
+      // 👇 Add snarky overview link here
+      const overview = document.createElement("p");
+      overview.style.marginTop = "14px";
+      overview.innerHTML = `<a href="https://bristolbloods.com/overview/">See how the rest of these losers made out →</a>`;
+      wrap.appendChild(overview);
     };
     img.onerror = () => {
       loader.style.display = "none";
