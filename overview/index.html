@@ -5,14 +5,16 @@
 <style>
   :root { color-scheme: dark }
   body { margin:0; background:#000; color:#fff; font:16px/1.4 system-ui; }
-  header { padding:16px 20px; border-bottom:1px solid #151515; }
+  header { padding:16px 20px; border-bottom:1px solid #151515; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
   h1 { margin:0; font-size:clamp(22px,3.2vw,34px); }
   .muted { color:#999; font-size:13px; }
+  .stamp { color:#aaa; font-size:13px; margin-left:auto; }
   .grid { display:grid; gap:16px; padding:16px;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
   .card {
     background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:10px;
     display:flex; flex-direction:column; align-items:center; min-height:320px;
+    will-change: transform, opacity;
   }
   .slot { font-weight:800; margin:6px 0 8px; color:#ff3b3b; }
   .name { margin-top:8px; font-weight:700; }
@@ -22,11 +24,26 @@
     display:grid; place-items:center; color:#777; font-weight:700;
   }
   img { width:100%; height:auto; border-radius:10px; background:#000; display:block; }
+
+  /* Fun reveal animation */
+  @media (prefers-reduced-motion: no-preference) {
+    .flip-in { animation: flipIn .5s ease both; }
+    .fade-up { animation: fadeUp .35s ease both; }
+    @keyframes flipIn {
+      from { transform: rotateY(-90deg) scale(.96); opacity: 0; }
+      to   { transform: rotateY(0) scale(1);        opacity: 1; }
+    }
+    @keyframes fadeUp {
+      from { transform: translateY(6px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+  }
 </style>
 
 <header>
   <h1>Bristol Bloods — Draft Order</h1>
   <div class="muted">Fills in as each coward braves the reveal.</div>
+  <div id="stamp" class="stamp">Last updated: —</div>
 </header>
 
 <section class="grid" id="grid"></section>
@@ -34,6 +51,8 @@
 <script>
 const API = "https://api.bristolbloods.com";
 const LEAGUE_SIZE = 12;
+
+function tcase(s){ return s.replace(/\b\w/g, c => c.toUpperCase()); }
 
 function placeholder(slot) {
   const el = document.createElement('div');
@@ -47,29 +66,35 @@ function placeholder(slot) {
 }
 
 async function load() {
-  // Build placeholders 1..12
   const grid = document.getElementById('grid');
   grid.innerHTML = "";
-  const slots = new Map(); // slot -> element
+  const slots = new Map();
   for (let i = 1; i <= LEAGUE_SIZE; i++) {
     const el = placeholder(i);
     grid.appendChild(el);
     slots.set(i, el);
   }
 
-  // Fetch current state
-  const res = await fetch(`${API}/state`);  
-  const rows = await res.json(); // [{name, slug, slot, imageUrl}]
-  // Fill revealed slots
+  let rows = [];
+  try {
+    const res = await fetch(`${API}/state`);
+    rows = await res.json();         
+  } catch (e) { console.error("state fetch failed", e); }
+
   for (const r of rows) {
     const el = slots.get(r.slot);
     if (!el) continue;
+
     el.innerHTML = `
       <div class="slot">Pick #${r.slot}</div>
-      <img loading="lazy" src="${API}${r.imageUrl}" alt="${r.name}" />
-      <div class="name">${r.name}</div>
+      <img loading="lazy" src="${API}${r.imageUrl}" alt="${r.name}" class="flip-in" />
+      <div class="name fade-up">${tcase(r.name)}</div>
     `;
   }
+
+  // Update the "last updated" stamp
+  document.getElementById('stamp').textContent =
+    "Last updated: " + new Date().toLocaleTimeString();
 }
 
 load();
