@@ -5,84 +5,111 @@
 <title>Bristol Bloods</title>
 
 <style>
-  :root { color-scheme: dark }
+  :root{
+    color-scheme: dark;
+    /* One stack width for everything: logo, form, CTAs */
+    --stack: 640px;           /* desktop/tablet max */
+    --stack-mobile: 480px;    /* phone max */
+    --gap: 16px;
+    --red: #e11;
+  }
+
   html, body { height: 100% }
-  body{
-    margin:0; background:#000; color:#fff;
-    font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  body {
+    margin: 0; background: #000; color: #fff;
+    font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    display: grid; place-items: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
-  /* Center the whole stack with comfy top/bottom padding */
+  /* Center the vertical stack with breathable top/bottom space */
   .wrap{
+    width: 100%;
     min-height: 100dvh;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap: clamp(14px, 3.5vh, 22px);
-    padding: clamp(20px, 6vh, 60px) 24px;  /* keeps logo away from extreme top/btm */
-    text-align:center;
+    display: grid;
+    grid-template-rows: auto auto auto auto auto;
+    row-gap: var(--gap);
+    align-content: center;
+    justify-items: center;
+    padding: clamp(20px, 6vh, 64px) 20px; /* keeps content off the edges */
+    text-align: center;
   }
 
-  /* —— Logo: swap via <picture>; scale by width; centered —— */
-  .logo{ width: min(92vw, 760px); margin-inline:auto }
+  /* —— Logo —— */
+  .logo{
+    width: min(92vw, var(--stack));     /* same width logic as the form/CTAs */
+    margin-bottom: 4px;
+  }
   .logo picture{ display:block }
   .logo img{ width:100%; height:auto; display:block }
 
-  /* On phones the stacked logo is taller; cap width a bit */
-  @media (max-width: 560px){ .logo{ width: min(92vw, 440px); } }
+  /* slightly narrower on phones; stacked asset is taller */
+  @media (max-width: 560px){
+    .logo{ width: min(92vw, var(--stack-mobile)); }
+  }
 
   /* Subtitle */
   .sub{
-    color:#b3b3b3; font-weight:600; letter-spacing:.2px;
+    color:#bfbfbf; font-weight:600; letter-spacing:.2px;
     font-size: clamp(14px, 2.8vw, 18px);
-    margin-top: 2px;
+    margin: 0 0 4px;
   }
 
-  /* Rows share a unified max width so everything lines up */
-  .row{ width: min(92vw, 720px); margin-inline:auto; }
-  .form, .ctas{
-    display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap;
+  /* Rows share the same width so edges line up perfectly */
+  .row{
+    width: min(92vw, var(--stack));
+    margin: 0 auto;
   }
-  .form{ width: min(92vw, 640px); }    /* slightly narrower than CTAs for rhythm */
 
+  /* Form */
+  .form{
+    display: grid; grid-template-columns: 1fr auto; gap: 12px;
+    width: min(92vw, var(--stack));
+  }
   .input{
-    flex: 1 1 360px; min-width: 260px; max-width: 480px;
     padding: 14px 16px; border-radius: 12px;
     border:1px solid #2a2a2a; background:#0f0f0f; color:#fff;
-    outline:none; transition:border .15s ease, box-shadow .15s ease;
+    outline: none; transition: border .15s ease, box-shadow .15s ease;
   }
   .input::placeholder{ color:#6b6b6b }
-  .input:focus{ border-color:#e11; box-shadow:0 0 0 3px rgba(255,17,17,.2) }
+  .input:focus{ border-color: var(--red); box-shadow:0 0 0 3px rgba(255,17,17,.2) }
 
+  /* Buttons */
   .btn{
-    --bg:#111; --bd:#2a2a2a; --fg:#fff;
+    --bg:#151515; --bd:#2a2a2a; --fg:#fff;
     display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    padding:14px 18px; border-radius:12px; min-width:160px;
-    border:1px solid var(--bd); background:var(--bg); color:var(--fg);
-    text-decoration:none; font-weight:800; letter-spacing:.2px; cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,.35);
+    padding: 14px 18px; border-radius: 12px;
+    border:1px solid var(--bd); background: var(--bg); color: var(--fg);
+    text-decoration: none; font-weight: 800; letter-spacing:.2px; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
     transition: transform .08s ease, filter .2s ease, border-color .2s ease, background .2s ease;
   }
   .btn:hover{ transform: translateY(-1px); filter: brightness(1.05) }
   .btn:active{ transform: translateY(0) scale(.98) }
-  .btn:focus-visible{ outline:none; box-shadow:0 0 0 3px rgba(255,17,17,.35) }
+  .btn:focus-visible{ outline:none; box-shadow: 0 0 0 3px rgba(255,17,17,.35) }
 
-  .btn--primary{ --bg:#e11; --bd:#e11 }
-  .btn--ghost  { --bg:#151515; --bd:#2a2a2a }
-  .btn--ghost:hover{ border-color:#3a3a3a }
+  .btn--primary{ --bg: var(--red); --bd: var(--red); }
+  .btn--ghost  { --bg:#151515; --bd:#2a2a2a; }
 
-  /* Make the three CTAs equal width and aligned */
-  .ctas .btn{
-    width: clamp(200px, 28vw, 260px);
+  /* CTA group uses same width as form; buttons flex evenly */
+  .ctas{
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    width: min(92vw, var(--stack));
   }
 
-  .hint{ color:#8b8b8b; font-size:13px; margin-top: 8px }
+  .hint{
+    color:#8b8b8b; font-size:13px;
+    width: min(92vw, var(--stack));
+    margin-top: 2px;
+  }
 
-  /* Mobile: stack form vertically; full-width buttons for perfect alignment */
+  /* Mobile: stacked logo, full-width inputs and CTAs */
   @media (max-width: 560px){
-    .form{ flex-direction:column; align-items:stretch; gap:10px; width:min(92vw, 480px) }
-    .input{ min-width:unset; max-width:unset; width:100% }
-    #go{ width:100% }
-    .ctas{ flex-direction:column; align-items:stretch; gap:12px; width:min(92vw, 480px) }
-    .ctas .btn{ width:100% }
+    .row, .form, .ctas, .hint{ width: min(92vw, var(--stack-mobile)); }
+    .form{ grid-template-columns: 1fr; } /* stack input above button */
+    .btn{ width: 100% }
+    .ctas{ grid-template-columns: 1fr; } /* buttons one per row */
   }
 
   /* Subtle entrance */
@@ -97,9 +124,7 @@
 <div class="wrap">
   <div class="logo">
     <picture>
-      <!-- stacked on phones -->
       <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
-      <!-- wide otherwise -->
       <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
     </picture>
   </div>
