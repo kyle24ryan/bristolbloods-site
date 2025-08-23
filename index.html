@@ -5,90 +5,142 @@
 <title>Bristol Bloods</title>
 
 <style>
-  :root { color-scheme: dark }
-  body {
-    margin:0; background:#000; color:#fff;
+  :root{
+    color-scheme: dark;
+    --stack: 620px;          /* desktop/tablet max width for logo + rows */
+    --stack-mobile: 380px;   /* phone max width */
+    --gap: 14px;
+    --red: #e11;
+  }
+
+  html, body { height: 100%; margin: 0; }
+  body{
+    background:#000; color:#fff;
     font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-height:100dvh; text-align:center; padding:40px 16px;
+    display:grid; place-items:center;
+    padding: 24px 16px;
   }
 
-  /* Logo with responsive swap */
-  .logo { margin-bottom: 2px; } /* tighter space below logo */
-  .logo img {
-    width: clamp(260px, 70vw, 520px);
-    height:auto; display:block; margin:auto;
+  /* Centered vertical stack */
+  .wrap{
+    width:100%;
+    min-height:100dvh;
+    display:grid;
+    align-content:center;
+    justify-items:center;
+    row-gap: var(--gap);
+    text-align:center;
   }
 
-  /* Subtitle */
-  .sub { margin: 0 0 20px; color:#b3b3b3; font-weight:600; letter-spacing:.2px; }
+  /* Shared width for logo + rows */
+  .stack { width:min(92vw, var(--stack)); }
 
-  /* Form row: unified input + button */
-  .form {
-    display:flex; justify-content:center; align-items:stretch;
-    width: min(92vw, 520px); margin: 0 auto 22px;
+  /* Logo (auto-switch to stacked on mobile) */
+  .logo { margin-bottom: 8px; }
+  .logo picture{ display:block }
+  .logo img{ width:100%; height:auto; display:block }
+
+  /* Subtitle (tight gap to logo) */
+  .sub{ margin: 0 0 10px; color:#bdbdbd; font-weight:600; letter-spacing:.2px }
+
+  /* Reveal row: input + button = one element */
+  .reveal{
+    width:100%;
+    display:grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    column-gap: 10px;
+    align-items:stretch;
+    margin-bottom: 6px;
   }
-  .input {
-    flex:1; padding:14px 16px; border:none;
+  .input{
+    box-sizing:border-box;
+    padding:14px 16px;
+    border:1px solid #2a2a2a;
     border-radius:12px 0 0 12px;
-    background:#0f0f0f; color:#fff; font-size:16px;
+    background:#0f0f0f; color:#fff;
+    outline:none;
   }
-  .input::placeholder { color:#6b6b6b }
-  .btn--primary {
-    border:none; border-radius:0 12px 12px 0;
-    background:#e11; color:#fff; font-weight:700;
-    padding:0 20px; cursor:pointer;
-    transition: background .2s ease;
+  .input::placeholder{ color:#6b6b6b }
+  .btn{
+    box-sizing:border-box;
+    padding:14px 18px;
+    border-radius:0 12px 12px 0;
+    border:1px solid var(--red);
+    background:var(--red); color:#fff;
+    font-weight:800; cursor:pointer;
+    transition:filter .2s ease, transform .08s ease;
   }
-  .btn--primary:hover { background:#c00 }
+  .btn:hover{ filter:brightness(1.05) }
+  .btn:active{ transform:scale(.98) }
 
-  /* CTA buttons */
-  .ctas {
-    display:flex; justify-content:center; flex-wrap:wrap; gap:12px;
-    margin-bottom:20px;
+  /* 3-button row: single row, equal widths */
+  .cta-row{
+    width:100%;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 8px;
   }
-  .btn {
-    --bg:#151515; --bd:#2a2a2a;
-    flex:1 1 140px; max-width:180px;
-    padding:14px; border-radius:12px;
-    border:1px solid var(--bd); background:var(--bg); color:#fff;
-    text-decoration:none; font-weight:700;
+  .cta{
     display:flex; align-items:center; justify-content:center;
+    padding:14px;
+    background:#151515; color:#fff;
+    border:1px solid #2a2a2a; border-radius:12px;
+    text-decoration:none; font-weight:800;
+    transition:border-color .2s ease;
   }
-  .btn:hover { border-color:#444 }
+  .cta:hover{ border-color:#3a3a3a }
 
-  .hint { color:#8b8b8b; font-size:13px }
+  .hint{ color:#8b8b8b; font-size:13px; }
 
-  /* Mobile adjustments */
-  @media(max-width:560px){
-    body{ padding:30px 14px }
-    .logo img { width: clamp(200px, 75vw, 360px); }
-    .form{ flex-direction:column; gap:10px; }
-    .input, .btn--primary{ border-radius:12px; width:100%; }
+  /* ---------- Mobile ---------- */
+  @media (max-width: 560px){
+    .stack{ width:min(92vw, var(--stack-mobile)); }
+
+    /* show stacked logo source */
+    .logo img{
+      content: url("/assets/logo-red-stacked.svg");
+    }
+
+    /* Full-width but still unified look */
+    .reveal{
+      grid-template-columns: minmax(0,1fr) auto;
+      column-gap: 8px;
+    }
+    .input{ border-radius:12px; }               /* stacked layout still looks clean */
+    .btn{ border-radius:12px; }                 /* (we keep them separate for thumb taps) */
+
+    /* 3 buttons in one row on phones too */
+    .cta-row{ grid-template-columns: repeat(3, 1fr); }
   }
 </style>
 
-<div class="logo">
-  <picture>
-    <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
-    <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
-  </picture>
+<div class="wrap">
+  <!-- Logo (wide by default) -->
+  <div class="logo stack">
+    <picture>
+      <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
+      <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
+    </picture>
+  </div>
+
+  <div class="sub stack">Labor Day Massacre — 7pm EST</div>
+
+  <!-- Reveal row -->
+  <div class="reveal stack" id="revealRow">
+    <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
+    <button id="go" class="btn">Reveal my fate</button>
+  </div>
+
+  <!-- Single-row CTAs (equal widths) -->
+  <div class="cta-row stack">
+    <a class="cta" href="/overview/">Draft Order</a>
+    <a class="cta" href="/keepers/">Keepers</a>
+    <a class="cta" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank" rel="noopener">League Home</a>
+  </div>
+
+  <div class="hint stack">Disclaimer: Draft is subject to change.</div>
 </div>
-
-<div class="sub">Labor Day Massacre — 7pm EST</div>
-
-<div class="form">
-  <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
-  <button id="go" class="btn--primary">Reveal my fate</button>
-</div>
-
-<div class="ctas">
-  <a class="btn" href="/overview/">Draft Order</a>
-  <a class="btn" href="/keepers/">Keepers</a>
-  <a class="btn" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank">League Home</a>
-</div>
-
-<div class="hint">Disclaimer: Draft is subject to change.</div>
 
 <script>
   const input = document.getElementById('name');
