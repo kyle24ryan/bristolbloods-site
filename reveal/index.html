@@ -1,22 +1,116 @@
 <!doctype html>
 <meta charset="utf-8" />
 <title>Bristol Bloods Draft Reveal</title>
-<style>body{display:grid;place-items:center;height:100dvh;background:#0b0b0b;color:#fff;font:16px system-ui}</style>
-<form id=f>
-  <h1>Draft Reveal</h1>
-  <input name="name" placeholder="First name" required />
-  <button>Reveal</button>
-</form>
-<img id=img style="max-width:min(90vw,600px);display:none" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background:#000; color:#fff;
+    font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    display:grid; place-items:center;
+  }
+  .wrap { width:min(100vw, 1100px); padding:18px; text-align:center; }
+  h1 {
+    margin: 0 0 12px; font-weight: 800; letter-spacing: .4px;
+    font-size: clamp(20px, 3vw, 32px);
+  }
+
+  /* Loader */
+  .loader { display:flex; gap:12px; align-items:center; justify-content:center; margin:14px 0 18px; }
+  .spinner {
+    width:28px; height:28px; border-radius:50%;
+    border:3px solid #333; border-top-color:#e11; animation:spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .muted { color:#aaa; font-size:14px; }
+
+  img#card {
+    display:block; margin:0 auto; max-width:96vw; max-height:84vh;
+    background:#000; border-radius:10px;
+    opacity:0; transform:scale(.98);
+    transition: opacity .35s ease, transform .35s ease;
+    box-shadow: 0 10px 40px rgba(0,0,0,.6);
+  }
+  img#card.show { opacity:1; transform:scale(1); }
+
+  .err {
+    display:none; margin:12px auto; padding:12px 14px;
+    background:#180000; color:#ffb3b3; border:1px solid #3a0000; border-radius:10px;
+  }
+  .err.show { display:block; }
+  .btn {
+    margin-top:10px; background:#e11; color:#fff; border:0; padding:10px 14px;
+    border-radius:10px; font:inherit; cursor:pointer;
+  }
+</style>
+
+<div class="wrap">
+  <h1 id="greeting"></h1>
+
+  <div id="loader" class="loader">
+    <div class="spinner" aria-hidden="true"></div>
+    <div>
+      <div><strong>Summoning your draft card…</strong></div>
+      <div class="muted">This can take a few seconds the first time.</div>
+    </div>
+  </div>
+
+  <img id="card" alt="Draft reveal" hidden />
+
+  <div id="err" class="err">
+    <div id="errmsg">Something went wrong.</div>
+    <button id="retry" class="btn">Try again</button>
+  </div>
+</div>
+
 <script>
-f.onsubmit = async (e) => {
-  e.preventDefault();
-  const name = new FormData(f).get("name");
-  const url = "https://bristol-bloods-api.YOURNAME.workers.dev/reveal?name="+encodeURIComponent(name);
-  const res = await fetch(url);
-  const blob = await res.blob();
-  const img = document.getElementById('img');
-  img.src = URL.createObjectURL(blob);
-  img.style.display = 'block';
-};
+(async () => {
+  const qs = new URLSearchParams(location.search);
+  const name = (qs.get("name") || "Stranger").trim();
+  document.getElementById("greeting").textContent =
+    `Ready to embarrass yourself again, ${name}?`;
+
+  const loader = document.getElementById("loader");
+  const img    = document.getElementById("card");
+  const errBox = document.getElementById("err");
+  const errMsg = document.getElementById("errmsg");
+  const retry  = document.getElementById("retry");
+
+  async function fetchCard() {
+    errBox.classList.remove("show");
+    img.hidden = true; img.classList.remove("show");
+    loader.style.display = "flex";
+
+    try {
+      const res = await fetch(`https://api.bristolbloods.com/reveal?name=${encodeURIComponent(name)}`, {
+        // Avoid cached broken responses during testing:
+        headers: { "cache-control": "no-cache" }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      img.src = url;
+      img.hidden = false;
+      // allow one frame so the transition animates
+      requestAnimationFrame(() => img.classList.add("show"));
+    } catch (e) {
+      errMsg.textContent = `Could not load card for "${name}": ${e.message || e}`;
+      errBox.classList.add("show");
+    } finally {
+      loader.style.display = "none";
+    }
+  }
+
+  retry.onclick = fetchCard;
+
+  // Helpful hint if ?name is missing
+  if (!qs.get("name")) {
+    errMsg.textContent = `Add ?name=YourName to the URL, e.g. ${location.origin}${location.pathname}?name=Kyle`;
+    errBox.classList.add("show");
+    loader.style.display = "none";
+  } else {
+    fetchCard();
+  }
+})();
 </script>
