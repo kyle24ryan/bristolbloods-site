@@ -3,50 +3,26 @@
 <title>Bristol Bloods Draft Reveal</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  :root { color-scheme: dark; }
-  html, body { height: 100%; }
-  body {
-    margin: 0; background:#000; color:#fff;
-    font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    display:grid; place-items:center;
-  }
-  .wrap { width:min(100vw, 1100px); padding:18px; text-align:center; }
-  h1 {
-    margin: 0 0 12px; font-weight: 800; letter-spacing: .4px;
-    font-size: clamp(20px, 3vw, 32px);
-  }
-
-  /* Loader */
-  .loader { display:flex; gap:12px; align-items:center; justify-content:center; margin:14px 0 18px; }
-  .spinner {
-    width:28px; height:28px; border-radius:50%;
-    border:3px solid #333; border-top-color:#e11; animation:spin 0.9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .muted { color:#aaa; font-size:14px; }
-
-  img#card {
-    display:block; margin:0 auto; max-width:96vw; max-height:84vh;
-    background:#000; border-radius:10px;
-    opacity:0; transform:scale(.98);
-    transition: opacity .35s ease, transform .35s ease;
-    box-shadow: 0 10px 40px rgba(0,0,0,.6);
-  }
-  img#card.show { opacity:1; transform:scale(1); }
-
-  .err {
-    display:none; margin:12px auto; padding:12px 14px;
-    background:#180000; color:#ffb3b3; border:1px solid #3a0000; border-radius:10px;
-  }
-  .err.show { display:block; }
-  .btn {
-    margin-top:10px; background:#e11; color:#fff; border:0; padding:10px 14px;
-    border-radius:10px; font:inherit; cursor:pointer;
-  }
+  :root { color-scheme: dark }
+  html,body{height:100%}
+  body{margin:0;background:#000;color:#fff;display:grid;place-items:center;font:16px/1.4 system-ui}
+  .wrap{width:min(100vw,1100px);padding:18px;text-align:center}
+  h1{margin:0 0 12px;font-weight:800;letter-spacing:.4px;font-size:clamp(20px,3vw,32px)}
+  .loader{display:none;gap:12px;align-items:center;justify-content:center;margin:14px 0 18px}
+  .spinner{width:28px;height:28px;border-radius:50%;border:3px solid #333;border-top-color:#e11;animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .muted{color:#aaa;font-size:14px}
+  #card{display:block;margin:0 auto;max-width:96vw;max-height:84vh;background:#000;border-radius:10px;opacity:0;transform:scale(.98);transition:opacity .35s ease,transform .35s ease;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+  #card.show{opacity:1;transform:scale(1)}
+  .btn{margin-top:10px;background:#e11;color:#fff;border:0;padding:10px 14px;border-radius:10px;font:inherit;cursor:pointer}
+  .err{display:none;margin:12px auto;padding:12px 14px;background:#180000;color:#ffb3b3;border:1px solid #3a0000;border-radius:10px}
+  .err.show{display:block}
 </style>
 
 <div class="wrap">
   <h1 id="greeting"></h1>
+
+  <button id="go" class="btn">Reveal my fate</button>
 
   <div id="loader" class="loader">
     <div class="spinner" aria-hidden="true"></div>
@@ -57,60 +33,52 @@
   </div>
 
   <img id="card" alt="Draft reveal" hidden />
-
-  <div id="err" class="err">
-    <div id="errmsg">Something went wrong.</div>
-    <button id="retry" class="btn">Try again</button>
-  </div>
+  <div id="err" class="err"></div>
 </div>
 
 <script>
-(async () => {
-  const qs = new URLSearchParams(location.search);
+(() => {
+  const qs   = new URLSearchParams(location.search);
   const name = (qs.get("name") || "Stranger").trim();
   document.getElementById("greeting").textContent =
     `Ready to embarrass yourself again, ${name}?`;
 
+  const btn    = document.getElementById("go");
   const loader = document.getElementById("loader");
   const img    = document.getElementById("card");
-  const errBox = document.getElementById("err");
-  const errMsg = document.getElementById("errmsg");
-  const retry  = document.getElementById("retry");
+  const err    = document.getElementById("err");
 
-  async function fetchCard() {
-    errBox.classList.remove("show");
-    img.hidden = true; img.classList.remove("show");
-    loader.style.display = "flex";
-
-    try {
-      const res = await fetch(`https://api.bristolbloods.com/reveal?name=${encodeURIComponent(name)}`, {
-        // Avoid cached broken responses during testing:
-        headers: { "cache-control": "no-cache" }
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      img.src = url;
-      img.hidden = false;
-      // allow one frame so the transition animates
-      requestAnimationFrame(() => img.classList.add("show"));
-    } catch (e) {
-      errMsg.textContent = `Could not load card for "${name}": ${e.message || e}`;
-      errBox.classList.add("show");
-    } finally {
-      loader.style.display = "none";
+  function start() {
+    if (!qs.get("name")) {
+      err.textContent = `Add ?name=YourName to the URL, e.g. ${location.origin}${location.pathname}?name=Kyle`;
+      err.classList.add("show");
+      return;
     }
+    err.classList.remove("show");
+    btn.disabled = true;
+    loader.style.display = "flex";
+    img.hidden = true;
+    img.classList.remove("show");
+
+    // cache-bust so repeat reveals always load fresh
+    const url = `https://api.bristolbloods.com/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
+    img.onload = () => {
+      loader.style.display = "none";
+      img.hidden = false;
+      requestAnimationFrame(() => img.classList.add("show"));
+    };
+    img.onerror = () => {
+      loader.style.display = "none";
+      err.textContent = `Could not load card for "${name}".`;
+      err.classList.add("show");
+      btn.disabled = false;
+    };
+    img.src = url;
   }
 
-  retry.onclick = fetchCard;
+  btn.addEventListener("click", start);
 
-  // Helpful hint if ?name is missing
-  if (!qs.get("name")) {
-    errMsg.textContent = `Add ?name=YourName to the URL, e.g. ${location.origin}${location.pathname}?name=Kyle`;
-    errBox.classList.add("show");
-    loader.style.display = "none";
-  } else {
-    fetchCard();
-  }
+  // Optional: auto-start if ?autoplay=1
+  if (qs.get("autoplay") === "1") start();
 })();
 </script>
