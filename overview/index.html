@@ -58,7 +58,7 @@ async function load() {
   }
 
   // Fetch current state
-  const res = await fetch(`${API}/state`, { headers: { "cache-control": "no-cache" } });
+  const res = await fetch(`${API}/state`);  
   const rows = await res.json(); // [{name, slug, slot, imageUrl}]
   // Fill revealed slots
   for (const r of rows) {
