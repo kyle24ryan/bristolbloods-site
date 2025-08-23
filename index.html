@@ -5,147 +5,91 @@
 <title>Bristol Bloods</title>
 
 <style>
-  :root{
-    color-scheme: dark;
-    /* One stack width for everything: logo, form, CTAs */
-    --stack: 640px;           /* desktop/tablet max */
-    --stack-mobile: 480px;    /* phone max */
-    --gap: 16px;
-    --red: #e11;
-  }
-
-  html, body { height: 100% }
+  :root { color-scheme: dark }
   body {
-    margin: 0; background: #000; color: #fff;
-    font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-    display: grid; place-items: center;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right)
-             env(safe-area-inset-bottom) env(safe-area-inset-left);
+    margin:0; background:#000; color:#fff;
+    font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100dvh; text-align:center; padding:40px 16px;
   }
 
-  /* Center the vertical stack with breathable top/bottom space */
-  .wrap{
-    width: 100%;
-    min-height: 100dvh;
-    display: grid;
-    grid-template-rows: auto auto auto auto auto;
-    row-gap: var(--gap);
-    align-content: center;
-    justify-items: center;
-    padding: clamp(20px, 6vh, 64px) 20px; /* keeps content off the edges */
-    text-align: center;
-  }
-
-  /* —— Logo —— */
-  .logo{
-    width: min(92vw, var(--stack));     /* same width logic as the form/CTAs */
-    margin-bottom: 4px;
-  }
-  .logo picture{ display:block }
-  .logo img{ width:100%; height:auto; display:block }
-
-  /* slightly narrower on phones; stacked asset is taller */
-  @media (max-width: 560px){
-    .logo{ width: min(92vw, var(--stack-mobile)); }
+  /* Logo — scale slightly smaller */
+  .logo { margin-bottom: 14px; }
+  .logo img {
+    width: clamp(220px, 60vw, 460px); /* smaller overall */
+    height:auto; display:block; margin:auto;
   }
 
   /* Subtitle */
-  .sub{
-    color:#bfbfbf; font-weight:600; letter-spacing:.2px;
-    font-size: clamp(14px, 2.8vw, 18px);
-    margin: 0 0 4px;
-  }
+  .sub { margin: 0 0 26px; color:#b3b3b3; font-weight:600; letter-spacing:.2px; }
 
-  /* Rows share the same width so edges line up perfectly */
-  .row{
-    width: min(92vw, var(--stack));
-    margin: 0 auto;
+  /* Form row: unified look */
+  .form {
+    display:flex; justify-content:center; align-items:stretch;
+    width: min(92vw, 520px); margin: 0 auto 22px;
   }
-
-  /* Form */
-  .form{
-    display: grid; grid-template-columns: 1fr auto; gap: 12px;
-    width: min(92vw, var(--stack));
+  .input {
+    flex:1; padding:14px 16px; border:none;
+    border-radius:12px 0 0 12px;
+    background:#0f0f0f; color:#fff;
+    font-size:16px; min-width: 160px;
   }
-  .input{
-    padding: 14px 16px; border-radius: 12px;
-    border:1px solid #2a2a2a; background:#0f0f0f; color:#fff;
-    outline: none; transition: border .15s ease, box-shadow .15s ease;
+  .input::placeholder { color:#6b6b6b }
+  .btn--primary {
+    border:none; border-radius:0 12px 12px 0;
+    background:#e11; color:#fff; font-weight:700;
+    padding:0 20px; cursor:pointer;
+    transition: background .2s ease;
   }
-  .input::placeholder{ color:#6b6b6b }
-  .input:focus{ border-color: var(--red); box-shadow:0 0 0 3px rgba(255,17,17,.2) }
+  .btn--primary:hover { background:#c00 }
 
-  /* Buttons */
-  .btn{
-    --bg:#151515; --bd:#2a2a2a; --fg:#fff;
-    display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    padding: 14px 18px; border-radius: 12px;
-    border:1px solid var(--bd); background: var(--bg); color: var(--fg);
-    text-decoration: none; font-weight: 800; letter-spacing:.2px; cursor: pointer;
-    box-shadow: 0 6px 18px rgba(0,0,0,.35);
-    transition: transform .08s ease, filter .2s ease, border-color .2s ease, background .2s ease;
+  /* CTA buttons */
+  .ctas {
+    display:flex; justify-content:center; flex-wrap:wrap; gap:12px;
+    margin-bottom:20px;
   }
-  .btn:hover{ transform: translateY(-1px); filter: brightness(1.05) }
-  .btn:active{ transform: translateY(0) scale(.98) }
-  .btn:focus-visible{ outline:none; box-shadow: 0 0 0 3px rgba(255,17,17,.35) }
-
-  .btn--primary{ --bg: var(--red); --bd: var(--red); }
-  .btn--ghost  { --bg:#151515; --bd:#2a2a2a; }
-
-  /* CTA group uses same width as form; buttons flex evenly */
-  .ctas{
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-    width: min(92vw, var(--stack));
+  .btn {
+    --bg:#151515; --bd:#2a2a2a;
+    flex:1 1 140px; max-width:180px;
+    padding:14px; border-radius:12px;
+    border:1px solid var(--bd); background:var(--bg); color:#fff;
+    text-decoration:none; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
   }
+  .btn:hover { border-color:#444 }
 
-  .hint{
-    color:#8b8b8b; font-size:13px;
-    width: min(92vw, var(--stack));
-    margin-top: 2px;
-  }
+  .hint { color:#8b8b8b; font-size:13px }
 
-  /* Mobile: stacked logo, full-width inputs and CTAs */
-  @media (max-width: 560px){
-    .row, .form, .ctas, .hint{ width: min(92vw, var(--stack-mobile)); }
-    .form{ grid-template-columns: 1fr; } /* stack input above button */
-    .btn{ width: 100% }
-    .ctas{ grid-template-columns: 1fr; } /* buttons one per row */
-  }
-
-  /* Subtle entrance */
-  @media (prefers-reduced-motion:no-preference){
-    .logo,.sub,.form,.ctas,.hint{ animation: up .35s ease both }
-    .logo{ animation-delay:.05s } .sub{ animation-delay:.12s }
-    .form{ animation-delay:.2s } .ctas{ animation-delay:.28s }
-    @keyframes up{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
+  /* Mobile adjustments */
+  @media(max-width:560px){
+    body{ padding:30px 14px }
+    .logo img { width: clamp(180px, 70vw, 300px); } /* smaller logo */
+    .form{ flex-direction:column; gap:10px; }
+    .input, .btn--primary{ border-radius:12px; width:100%; }
   }
 </style>
 
-<div class="wrap">
-  <div class="logo">
-    <picture>
-      <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
-      <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
-    </picture>
-  </div>
-
-  <div class="sub">Labor Day Massacre — 7pm EST</div>
-
-  <!-- Reveal form -->
-  <div class="row form" id="revealRow">
-    <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
-    <button id="go" class="btn btn--primary">Reveal my fate</button>
-  </div>
-
-  <!-- CTAs -->
-  <div class="row ctas">
-    <a class="btn btn--ghost" href="/overview/">Draft Order</a>
-    <a class="btn btn--ghost" href="/keepers/">Keepers</a>
-    <a class="btn btn--ghost" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank" rel="noopener">League Home</a>
-  </div>
-
-  <div class="hint">Disclaimer: Draft is subject to change.</div>
+<div class="logo">
+  <picture>
+    <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
+    <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
+  </picture>
 </div>
+
+<div class="sub">Labor Day Massacre — 7pm EST</div>
+
+<div class="form">
+  <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
+  <button id="go" class="btn--primary">Reveal my fate</button>
+</div>
+
+<div class="ctas">
+  <a class="btn" href="/overview/">Draft Order</a>
+  <a class="btn" href="/keepers/">Keepers</a>
+  <a class="btn" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank">League Home</a>
+</div>
+
+<div class="hint">Disclaimer: Draft is subject to change.</div>
 
 <script>
   const input = document.getElementById('name');
