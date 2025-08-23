@@ -14,9 +14,25 @@
   }
   .wrap { width:min(100vw, 820px); padding: 28px; text-align: center }
 
-  /* Logo */
-  .logo { width:min(92vw, 520px); margin: 0 auto 12px }
-  .logo img { width:100%; height:auto; display:block }
+  /* Responsive logo sizing: scales by height, but never exceeds the viewport */
+  .logo{
+    /* Height scales with viewport width; bounded for phone ↔ desktop */
+    height: clamp(96px, 14vw, 220px);
+  
+    /* Width can grow, but capped so it never stretches too wide */
+    width: min(92vw, 820px);
+  
+    margin: 0 auto 16px;
+    display: grid;
+    place-items: center;
+  }
+  .logo img{
+    /* Fill the target height while keeping the wordmark’s aspect ratio */
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    display: block;
+  }
 
   /* Subtitle */
   .sub { margin: 6px 0 26px; color:#b3b3b3; font-weight:600; letter-spacing:.2px }
