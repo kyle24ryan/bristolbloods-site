@@ -14,19 +14,23 @@
   }
   .wrap { width:min(100vw, 820px); padding: 28px; text-align: center }
 
-  /* Responsive logo sizing */
+  /* ---------------------------------------------
+     LOGO: background-image (wide on desktop, stacked on mobile)
+     --------------------------------------------- */
   .logo{
     height: clamp(96px, 14vw, 220px);
     width: min(92vw, 820px);
     margin: 0 auto 16px;
-    display: grid; place-items: center;
+
+    background-image: url("/assets/logo-red-wide.svg");  /* default: wide */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
   }
-  .logo img{
-    height: 100%;
-    width: auto;
-    max-width: 100%;
-    display: block;
-    object-fit: contain;    /* ensure SVG never spills */
+  @media (max-width: 560px){
+    .logo{
+      background-image: url("/assets/logo-red-stacked.svg"); /* mobile: stacked */
+    }
   }
 
   /* Subtitle */
@@ -42,7 +46,7 @@
   .input::placeholder { color:#6b6b6b }
   .input:focus { border-color:#e11; box-shadow:0 0 0 3px rgba(255, 17, 17, .2) }
 
-  /* Buttons */
+  /* Buttons (consistent look) */
   .btn {
     --bg:#111; --bd:#2a2a2a; --fg:#fff;
     display:inline-flex; align-items:center; justify-content:center; gap:8px;
@@ -68,23 +72,19 @@
     @keyframes up { from { opacity:0; transform: translateY(6px) } to { opacity:1; transform: none } }
   }
 
-  /* Mobile: stack input + button full-width (optional but recommended) */
+  /* Mobile: stack input + button full-width */
   @media (max-width: 560px){
     #revealRow{ flex-direction:column; align-items:stretch; gap:10px }
     #go{ width:100% }
     .input{ min-width:unset }
+    /* Make CTA buttons full-width for thumb comfort */
+    .ctas{ flex-direction:column; align-items:stretch; gap:12px }
+    .ctas .btn{ width:100% }
   }
 </style>
 
 <div class="wrap">
-  <div class="logo">
-    <picture>
-      <!-- Use stacked logo on phones -->
-      <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
-      <!-- Fallback / desktop -->
-      <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
-    </picture>
-  </div>
+  <div class="logo"></div>
 
   <div class="sub">Labor Day Massacre — 7pm EST</div>
 
@@ -95,7 +95,7 @@
   </div>
 
   <!-- Uniform CTAs -->
-  <div class="row">
+  <div class="row ctas">
     <a class="btn btn--ghost" href="/overview/">Draft Order</a>
     <a class="btn btn--ghost" href="/keepers/">Keepers</a>
     <a class="btn btn--ghost" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank" rel="noopener">League Home</a>
