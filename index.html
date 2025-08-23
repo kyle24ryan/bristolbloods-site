@@ -1,0 +1,65 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bristol Bloods</title>
+<style>
+  :root { color-scheme: dark }
+  html, body { height: 100% }
+  body {
+    margin: 0; background: #000; color: #fff;
+    font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    display: grid; place-items: center;
+  }
+  .wrap { width:min(100vw, 980px); padding: 24px; text-align: center }
+  h1 { margin: 0 0 10px; font-size: clamp(28px, 6vw, 56px); letter-spacing: .5px }
+  p.sub { margin: 0 0 26px; color:#aaa }
+  .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:18px 0 8px }
+  input, button, a.btn {
+    font: inherit; padding: 12px 14px; border-radius: 12px; border: 1px solid #2a2a2a;
+    background: #0f0f0f; color: #fff; text-decoration: none; display:inline-flex; align-items:center; gap:8px;
+  }
+  button, a.btn.primary { background:#e11; border-color:#e11; cursor:pointer }
+  a.btn.secondary { background:#111 }
+  .muted { color:#8b8b8b; font-size: 13px; margin-top: 10px }
+  .logo {
+    width:min(90vw, 260px); height:260px; margin: 0 auto 14px;
+    background:
+      radial-gradient(120px 120px at 50% 30%, rgba(255,0,0,.12), transparent 70%),
+      radial-gradient(200px 200px at 80% 70%, rgba(255,0,0,.06), transparent 60%);
+    border-radius: 24px; border:1px solid #151515; display:grid; place-items:center;
+  }
+  .logo span { font-weight:900; font-size: 54px; color:#ff3b3b; letter-spacing:1px }
+</style>
+
+<div class="wrap">
+  <div class="logo"><span>🩸</span></div>
+
+  <h1>Bristol Bloods</h1>
+  <p class="sub">Fantasy Football • Draft Night Shenanigans</p>
+
+  <!-- Quick reveal form (builds /reveal/?name=...) -->
+  <div class="row" id="revealRow">
+    <input id="name" placeholder="Your first name" autocomplete="given-name" />
+    <button id="go" class="primary">Reveal my fate</button>
+  </div>
+
+  <!-- Secondary actions -->
+  <div class="row">
+    <a class="btn secondary" href="/overview/">See the draft board</a>
+    <a class="btn secondary" href="/reveal/?autoplay=1&name=Kyle">Demo with Kyle</a>
+  </div>
+
+  <p class="muted">Tip: scan the QR at the party to land here, type your first name, and boom.</p>
+</div>
+
+<script>
+  const input = document.getElementById('name');
+  document.getElementById('go').onclick = () => {
+    const name = (input.value || "").trim();
+    if (!name) { input.focus(); return; }
+    // send them to the reveal page (which fetches from the API)
+    location.href = `/reveal/?name=${encodeURIComponent(name)}`;
+  };
+  // Hit Enter to submit
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
+</script>
