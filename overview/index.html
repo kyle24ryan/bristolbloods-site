@@ -3,44 +3,75 @@
 <title>Bristol Bloods — Draft Order</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  :root{ color-scheme: dark }
-  body{ margin:0; background:#000; color:#fff; font:16px/1.4 system-ui; }
-  header{ padding:16px 20px; border-bottom:1px solid #151515; }
-  h1{ margin:0; font-size:clamp(22px,3.2vw,34px); }
-  .grid{
-    display:grid; gap:16px; padding:16px; 
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  }
-  .card{
+  :root { color-scheme: dark }
+  body { margin:0; background:#000; color:#fff; font:16px/1.4 system-ui; }
+  header { padding:16px 20px; border-bottom:1px solid #151515; }
+  h1 { margin:0; font-size:clamp(22px,3.2vw,34px); }
+  .muted { color:#999; font-size:13px; }
+  .grid { display:grid; gap:16px; padding:16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card {
     background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:10px;
-    display:flex; flex-direction:column; align-items:center;
+    display:flex; flex-direction:column; align-items:center; min-height:320px;
   }
-  .slot{ font-weight:800; margin:6px 0 8px; color:#ff3b3b; }
-  img{ width:100%; height:auto; border-radius:10px; background:#000; }
-  .muted{ color:#999; font-size:13px; }
+  .slot { font-weight:800; margin:6px 0 8px; color:#ff3b3b; }
+  .name { margin-top:8px; font-weight:700; }
+  .ph {
+    width:100%; aspect-ratio:1/1; border-radius:10px; background:
+      repeating-linear-gradient(45deg, #0f0f0f, #0f0f0f 10px, #111 10px, #111 20px);
+    display:grid; place-items:center; color:#777; font-weight:700;
+  }
+  img { width:100%; height:auto; border-radius:10px; background:#000; display:block; }
 </style>
+
 <header>
   <h1>Bristol Bloods — Draft Order</h1>
   <div class="muted">Fills in as each coward braves the reveal.</div>
 </header>
+
 <section class="grid" id="grid"></section>
+
 <script>
+const API = "https://api.bristolbloods.com";
+const LEAGUE_SIZE = 12;
+
+function placeholder(slot) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <div class="slot">Pick #${slot}</div>
+    <div class="ph">Awaiting reveal…</div>
+    <div class="name muted">—</div>
+  `;
+  return el;
+}
+
 async function load() {
-  const res = await fetch('https://api.bristolbloods.com/state', { headers: { 'cache-control':'no-cache' } });
+  // Build placeholders 1..12
+  const grid = document.getElementById('grid');
+  grid.innerHTML = "";
+  const slots = new Map(); // slot -> element
+  for (let i = 1; i <= LEAGUE_SIZE; i++) {
+    const el = placeholder(i);
+    grid.appendChild(el);
+    slots.set(i, el);
+  }
+
+  // Fetch current state
+  const res = await fetch(`${API}/state`, { headers: { "cache-control": "no-cache" } });
   const rows = await res.json(); // [{name, slug, slot, imageUrl}]
-  const g = document.getElementById('grid');
-  g.innerHTML = '';
+  // Fill revealed slots
   for (const r of rows) {
-    const el = document.createElement('div');
-    el.className = 'card';
+    const el = slots.get(r.slot);
+    if (!el) continue;
     el.innerHTML = `
       <div class="slot">Pick #${r.slot}</div>
-      <img loading="lazy" src="https://api.bristolbloods.com${r.imageUrl}" alt="${r.name}" />
-      <div style="margin-top:8px; font-weight:700">${r.name}</div>
+      <img loading="lazy" src="${API}${r.imageUrl}" alt="${r.name}" />
+      <div class="name">${r.name}</div>
     `;
-    g.appendChild(el);
   }
 }
+
 load();
 setInterval(load, 10000); // refresh every 10s
 </script>
