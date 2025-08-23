@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Bristol Bloods — Draft Order</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{ color-scheme: dark }
+  body{ margin:0; background:#000; color:#fff; font:16px/1.4 system-ui; }
+  header{ padding:16px 20px; border-bottom:1px solid #151515; }
+  h1{ margin:0; font-size:clamp(22px,3.2vw,34px); }
+  .grid{
+    display:grid; gap:16px; padding:16px; 
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .card{
+    background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:10px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .slot{ font-weight:800; margin:6px 0 8px; color:#ff3b3b; }
+  img{ width:100%; height:auto; border-radius:10px; background:#000; }
+  .muted{ color:#999; font-size:13px; }
+</style>
+<header>
+  <h1>Bristol Bloods — Draft Order</h1>
+  <div class="muted">Fills in as each coward braves the reveal.</div>
+</header>
+<section class="grid" id="grid"></section>
+<script>
+async function load() {
+  const res = await fetch('https://api.bristolbloods.com/state', { headers: { 'cache-control':'no-cache' } });
+  const rows = await res.json(); // [{name, slug, slot, imageUrl}]
+  const g = document.getElementById('grid');
+  g.innerHTML = '';
+  for (const r of rows) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = `
+      <div class="slot">Pick #${r.slot}</div>
+      <img loading="lazy" src="https://api.bristolbloods.com${r.imageUrl}" alt="${r.name}" />
+      <div style="margin-top:8px; font-weight:700">${r.name}</div>
+    `;
+    g.appendChild(el);
+  }
+}
+load();
+setInterval(load, 10000); // refresh every 10s
+</script>
