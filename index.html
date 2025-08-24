@@ -7,9 +7,9 @@
 <style>
   :root{
     color-scheme: dark;
-    --stack: 620px;          /* desktop/tablet max width for logo + rows */
-    --stack-mobile: 380px;   /* phone max width */
-    --gap: 14px;
+    /* One width to rule them all */
+    --stack: 680px;          /* desktop/tablet max for logo + rows */
+    --stack-mobile: 360px;   /* phone max */
     --red: #e11;
   }
 
@@ -21,51 +21,48 @@
     padding: 24px 16px;
   }
 
-  /* Centered vertical stack */
+  /* Vertical stack stays centered */
   .wrap{
     width:100%;
     min-height:100dvh;
     display:grid;
     align-content:center;
     justify-items:center;
-    row-gap: var(--gap);
+    row-gap: 14px;
     text-align:center;
   }
 
   /* Shared width for logo + rows */
-  .stack { width:min(92vw, var(--stack)); }
+  .stack{ width:min(92vw, var(--stack)); }
 
-  /* Logo (auto-switch to stacked on mobile) */
-  .logo { margin-bottom: 8px; }
+  /* Logo (wide by default; swaps to stacked on phones) */
+  .logo{ margin-bottom:8px }
   .logo picture{ display:block }
   .logo img{ width:100%; height:auto; display:block }
 
-  /* Subtitle (tight gap to logo) */
-  .sub{ margin: 0 0 10px; color:#bdbdbd; font-weight:600; letter-spacing:.2px }
+  /* Subtitle (tighter to logo) */
+  .sub{ margin:0 0 10px; color:#bdbdbd; font-weight:600; letter-spacing:.2px }
 
-  /* Reveal row: input + button = one element */
+  /* Reveal row: input + button as ONE element */
   .reveal{
     width:100%;
-    display:grid;
-    grid-template-columns: minmax(0,1fr) auto;
-    column-gap: 10px;
+    display:flex;
     align-items:stretch;
-    margin-bottom: 6px;
   }
   .input{
-    box-sizing:border-box;
-    padding:14px 16px;
-    border:1px solid #2a2a2a;
+    box-sizing:border-box; flex:1 1 auto;
+    padding:14px 16px; border:1px solid #2a2a2a;
+    border-right:0;                      /* fuse with button */
     border-radius:12px 0 0 12px;
-    background:#0f0f0f; color:#fff;
-    outline:none;
+    background:#0f0f0f; color:#fff; outline:none;
   }
   .input::placeholder{ color:#6b6b6b }
   .btn{
-    box-sizing:border-box;
+    box-sizing:border-box; flex:0 0 auto;
     padding:14px 18px;
+    border:1px solid var(--red);         /* fuse with input */
+    border-left:0;
     border-radius:0 12px 12px 0;
-    border:1px solid var(--red);
     background:var(--red); color:#fff;
     font-weight:800; cursor:pointer;
     transition:filter .2s ease, transform .08s ease;
@@ -73,50 +70,38 @@
   .btn:hover{ filter:brightness(1.05) }
   .btn:active{ transform:scale(.98) }
 
-  /* 3-button row: single row, equal widths */
+  /* 3-button row: SINGLE ROW, equal widths */
   .cta-row{
     width:100%;
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 8px;
+    display:grid; grid-template-columns:repeat(3, 1fr);
+    gap:12px;
   }
   .cta{
     display:flex; align-items:center; justify-content:center;
-    padding:14px;
+    padding:14px; border-radius:12px;
     background:#151515; color:#fff;
-    border:1px solid #2a2a2a; border-radius:12px;
-    text-decoration:none; font-weight:800;
+    border:1px solid #2a2a2a; text-decoration:none; font-weight:800;
     transition:border-color .2s ease;
   }
   .cta:hover{ border-color:#3a3a3a }
 
-  .hint{ color:#8b8b8b; font-size:13px; }
+  .hint{ color:#8b8b8b; font-size:13px }
 
   /* ---------- Mobile ---------- */
   @media (max-width: 560px){
     .stack{ width:min(92vw, var(--stack-mobile)); }
 
-    /* show stacked logo source */
-    .logo img{
-      content: url("/assets/logo-red-stacked.svg");
-    }
+    /* switch to stacked logo asset */
+    .logo img{ content:url("/assets/logo-red-stacked.svg"); }
 
-    /* Full-width but still unified look */
-    .reveal{
-      grid-template-columns: minmax(0,1fr) auto;
-      column-gap: 8px;
-    }
-    .input{ border-radius:12px; }               /* stacked layout still looks clean */
-    .btn{ border-radius:12px; }                 /* (we keep them separate for thumb taps) */
-
-    /* 3 buttons in one row on phones too */
-    .cta-row{ grid-template-columns: repeat(3, 1fr); }
+    /* keep input + button as one row, no overflow */
+    .reveal{ width:min(92vw, var(--stack-mobile)); }
+    .cta-row{ width:min(92vw, var(--stack-mobile)); grid-template-columns:repeat(3,1fr); }
   }
 </style>
 
 <div class="wrap">
-  <!-- Logo (wide by default) -->
+  <!-- Logo -->
   <div class="logo stack">
     <picture>
       <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
@@ -126,13 +111,13 @@
 
   <div class="sub stack">Labor Day Massacre — 7pm EST</div>
 
-  <!-- Reveal row -->
+  <!-- Row 1: unified input + button -->
   <div class="reveal stack" id="revealRow">
     <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
     <button id="go" class="btn">Reveal my fate</button>
   </div>
 
-  <!-- Single-row CTAs (equal widths) -->
+  <!-- Row 2: three CTAs, single row -->
   <div class="cta-row stack">
     <a class="cta" href="/overview/">Draft Order</a>
     <a class="cta" href="/keepers/">Keepers</a>
