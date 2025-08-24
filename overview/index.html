@@ -1,52 +1,54 @@
 <!doctype html>
 <meta charset="utf-8" />
 <title>Bristol Bloods — Draft Order</title>
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
   :root { color-scheme: dark }
   body { margin:0; background:#000; color:#fff; font:16px/1.4 system-ui; }
 
-  /* Header as 2-row grid */
+  /* ===== Header ===== */
   header {
-    padding:16px 20px;
+    padding:12px 20px 10px;
     border-bottom:1px solid #151515;
-    display:grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
-    align-items:center;
-    gap:6px 14px;
   }
-  .brand { grid-column: 1 / 2; grid-row: 1; display:flex; align-items:center; }
-  /* Bigger, responsive logo sizing */
-  .brand img.logo {
-    height: clamp(44px, 10vw, 72px);  /* was: clamp(26px, 4.5vw, 40px) */
-    width: auto;
+  .topbar {
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
   }
-  
-  /* Slightly larger on small tablets */
-  @media (min-width: 480px) {
-    .brand img.logo { height: clamp(52px, 8vw, 80px); }
+  .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+  .brand .logo {
+    height: clamp(44px, 8vw, 76px); /* readable wordmark on mobile & desktop */
+    width:auto; display:block;
   }
-  
-  /* Comfortable desktop size */
-  @media (min-width: 900px) {
-    .brand img.logo { height: 76px; } /* 72–80px sweet spot for readability */
+  nav { display:flex; align-items:center; gap:18px; }
+  nav a {
+    color:#cfcfcf; text-decoration:none; font-size:14px; padding:6px 2px;
+    border-bottom:2px solid transparent; transition:border-color .15s,color .15s;
   }
-  
-  /* Keep the header visually balanced with the larger logo */
-  .title { gap: 8px 12px; }                   /* tighten */
-  .h1like { font-size: clamp(20px, 2.4vw, 26px); }  /* nudge down a hair */
-  .stamp { grid-column: 2 / 3; grid-row: 1; color:#aaa; font-size:13px; white-space:nowrap; }
-  .muted { color:#999; font-size:13px; }
+  nav a:hover { color:#fff; border-color:#ff3b3b; }
+  nav a[aria-current="page"] { color:#fff; border-color:#ff3b3b; }
 
-  /* Fixed 2x6 grid, always two columns */
+  .subbar {
+    display:grid; grid-template-columns: 1fr auto; align-items:end;
+    gap:6px 14px; margin-top:8px;
+  }
+  h1 { margin:0; font-weight:800; font-size:clamp(20px,3.2vw,28px); }
+  .tagline { color:#999; font-size:13px; }
+  .stamp { color:#aaa; font-size:13px; white-space:nowrap; }
+
+  /* Mobile: stack nav below logo */
+  @media (max-width: 520px) {
+    .topbar { flex-direction:column; align-items:flex-start; gap:10px; }
+    nav { gap:14px; }
+    .subbar { grid-template-columns: 1fr; }
+    .stamp { justify-self:start; }
+  }
+
+  /* ===== Grid (unchanged) ===== */
   .grid {
     display:grid; gap:16px; padding:16px;
     grid-template-columns: repeat(2, 1fr);
     max-width: 1000px; margin: 0 auto;
   }
-
   .card {
     background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:10px;
     display:flex; flex-direction:column; align-items:center;
@@ -62,7 +64,7 @@
   .imgbox { width:100%; aspect-ratio:1/1; border-radius:10px; overflow:hidden; background:#000; }
   img { width:100%; height:100%; object-fit:cover; display:block; }
 
-  /* Slower reveal animations */
+  /* Slower, smoother reveal animation */
   @media (prefers-reduced-motion: no-preference) {
     .flip-in { animation: flipIn .9s cubic-bezier(.2,.7,.2,1) both; }
     .fade-up { animation: fadeUp .7s ease-out both; }
@@ -78,16 +80,23 @@
 </style>
 
 <header>
-  <!-- Row 1 -->
-  <div class="brand">
-    <img class="logo" src="/assets/logo-red-wide.svg" alt="Bristol Bloods" />
+  <div class="topbar">
+    <div class="brand">
+      <img class="logo" src="/assets/logo-red-wide.svg" alt="Bristol Bloods" />
+    </div>
+    <nav>
+      <a href="/"        >Home</a>
+      <a href="/keepers" >Keepers</a>
+      <a href="/draft"   aria-current="page">Draft Order</a>
+    </nav>
   </div>
-  <div id="stamp" class="stamp" aria-live="polite">Last updated: —</div>
 
-  <!-- Row 2 -->
-  <div class="title">
-    <div class="h1like">2025 Draft Order</div>
-    <div class="muted">Fills in as each coward braves the reveal.</div>
+  <div class="subbar">
+    <div>
+      <h1>2025 Draft Order</h1>
+      <div class="tagline">Fills in as each coward braves the reveal.</div>
+    </div>
+    <div id="stamp" class="stamp" aria-live="polite">Last updated: —</div>
   </div>
 </header>
 
@@ -96,7 +105,7 @@
 <script>
 const API = "https://api.bristolbloods.com";
 const LEAGUE_SIZE = 12;
-const REFRESH_MS = 60000; // 1 minutes
+const REFRESH_MS = 120000; // 2 minutes
 
 let pollTimer = null;
 let isFrozen = false;
