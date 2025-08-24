@@ -138,7 +138,7 @@
   const stamp    = document.getElementById('stamp');
   const canon    = document.getElementById('canon');
 
-  // Title-case for display (handles spaces, hyphens, apostrophes)
+  // Title-case for display
   function titleCaseName(raw) {
     return (raw || "")
       .trim()
@@ -153,16 +153,18 @@
   }
   function normalizeSlug(n){ return (n||"").trim().toLowerCase().replace(/\s+/g,'-'); }
 
-  // Person-specific greetings (grammar fixed)
+  // Person-specific greetings
   const PERSONAL_GREETINGS = {
     "james":  "{name}, ready to run it back?",
     "erica":  "{name}, who are you splitting the pot with this year?",
     "chino":  "{name}, how many weeks until you give up this year?",
     "justin": "Glad you stuck around, {name}! Maybe you can draft someone worth keeping this year?",
-    "tommy":  "Stay the fuck away from my draft position, {name}!"
+    "tommy":  "Stay the fuck away from my draft position, {name}!",
+    "tom":    "Stay the fuck away from my draft position, {name}!",
+    "thomas": "Stay the fuck away from my draft position, {name}!",
   };
 
-  // Savage defaults (keeps your favorite)
+  // Savage greetings
   const SAVAGE_GREETINGS = [
     "Ready to embarrass yourself again, {name}?",
     "Welcome to your annual humiliation, {name}.",
@@ -173,12 +175,43 @@
     "Brace yourself, {name}. The draft board is about to bully you."
   ];
 
+  // Button blurbs
+  const NEGATIVE_BUTTONS = [
+    "Reveal my fate",
+    "Spin the wheel of shame",
+    "Show me my doom",
+    "Draft me dirty",
+    "Let’s see the carnage",
+    "Unveil the humiliation",
+    "Deal me my pain",
+    "Destroy my hope",
+    "Tell me I’m fucked",
+    "Hand me the L",
+    "Kick me while I’m down",
+    "Serve me disappointment"
+  ];
+  const POSITIVE_BUTTONS = [
+    "Crown me champ early",
+    "Let’s see my dynasty",
+    "Load up the trophy",
+    "Bless me with greatness"
+  ];
+
   function pickGreeting(raw) {
     const display = titleCaseName(raw);
     const key = (raw || "").trim().toLowerCase();
     const tpl = PERSONAL_GREETINGS[key] ||
                 SAVAGE_GREETINGS[Math.floor(Math.random() * SAVAGE_GREETINGS.length)];
     return tpl.replaceAll("{name}", display || "Stranger");
+  }
+
+  function pickButtonBlurb() {
+    // 20% chance positive, otherwise savage
+    if (Math.random() < 0.2) {
+      return POSITIVE_BUTTONS[Math.floor(Math.random() * POSITIVE_BUTTONS.length)];
+    } else {
+      return NEGATIVE_BUTTONS[Math.floor(Math.random() * NEGATIVE_BUTTONS.length)];
+    }
   }
 
   function show(el, yes){ el.style.display = yes ? "" : "none"; }
@@ -190,6 +223,7 @@
 
   // --- init text ---
   greetEl.textContent = pickGreeting(name);
+  btn.textContent = pickButtonBlurb();
 
   // If no name, send them back politely
   if(!name){
@@ -202,7 +236,6 @@
         show(loading, true);
         loadingText.textContent = "Rolling the ball… painting your shame…";
 
-        // 1) Trigger assignment + render; returns PNG bytes
         const res = await fetch(`${API}/reveal?name=${encodeURIComponent(name)}`, {
           method: "GET",
           mode: "cors"
@@ -212,20 +245,16 @@
           throw new Error(`Reveal failed (${res.status}): ${msg}`);
         }
 
-        // 2) Display image from response
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         imgEl.src = url;
 
-        // 3) Also show the canonical persisted URL in R2
         const slug = normalizeSlug(name);
         const canonUrl = `${API}/image/${slug}.png`;
         canon.href = canonUrl;
         canon.textContent = canonUrl;
 
         setStamp();
-
-        // 4) Reveal UI
         show(loading, false);
         show(card, true);
         document.getElementById('controls').style.display = 'none';
