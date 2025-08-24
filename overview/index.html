@@ -8,22 +8,29 @@
   header { padding:16px 20px; border-bottom:1px solid #151515; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
   h1 { margin:0; font-size:clamp(22px,3.2vw,34px); }
   .muted { color:#999; font-size:13px; }
-  .stamp { color:#aaa; font-size:13px; margin-left:auto; }
-  .grid { display:grid; gap:16px; padding:16px;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .stamp { color:#aaa; font-size:13px; margin-left:auto; white-space:nowrap; }
+
+  /* Fixed 2x6 grid, always two columns */
+  .grid {
+    display:grid; gap:16px; padding:16px;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 1000px; margin: 0 auto;
+  }
+
   .card {
     background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:10px;
     display:flex; flex-direction:column; align-items:center; min-height:320px;
     will-change: transform, opacity;
   }
-  .slot { font-weight:800; margin:6px 0 8px; color:#ff3b3b; }
-  .name { margin-top:8px; font-weight:700; }
+  .slot { font-weight:800; margin:6px 0 8px; color:#ff3b3b; letter-spacing:.2px; }
+  .name { margin-top:8px; font-weight:700; text-align:center; }
   .ph {
     width:100%; aspect-ratio:1/1; border-radius:10px; background:
       repeating-linear-gradient(45deg, #0f0f0f, #0f0f0f 10px, #111 10px, #111 20px);
     display:grid; place-items:center; color:#777; font-weight:700;
   }
-  img { width:100%; height:auto; border-radius:10px; background:#000; display:block; }
+  .imgbox { width:100%; aspect-ratio:1/1; border-radius:10px; overflow:hidden; background:#000; }
+  img { width:100%; height:100%; object-fit:cover; display:block; }
 
   /* Fun reveal animation */
   @media (prefers-reduced-motion: no-preference) {
@@ -43,10 +50,10 @@
 <header>
   <h1>Bristol Bloods — Draft Order</h1>
   <div class="muted">Fills in as each coward braves the reveal.</div>
-  <div id="stamp" class="stamp">Last updated: —</div>
+  <div id="stamp" class="stamp" aria-live="polite">Last updated: —</div>
 </header>
 
-<section class="grid" id="grid"></section>
+<section class="grid" id="grid" aria-label="Draft order, two columns"></section>
 
 <script>
 const API = "https://api.bristolbloods.com";
@@ -77,24 +84,30 @@ async function load() {
 
   let rows = [];
   try {
-    const res = await fetch(`${API}/state`);
-    rows = await res.json();         
-  } catch (e) { console.error("state fetch failed", e); }
+    const res = await fetch(`${API}/state`, { cache: "no-store" });
+    rows = await res.json();
+  } catch (e) {
+    console.error("state fetch failed", e);
+  }
 
   for (const r of rows) {
-    const el = slots.get(r.slot);
+    const el = slots.get(Number(r.slot));
     if (!el) continue;
 
     el.innerHTML = `
       <div class="slot">Pick #${r.slot}</div>
-      <img loading="lazy" src="${API}${r.imageUrl}" alt="${r.name}" class="flip-in" />
+      <div class="imgbox">
+        <img loading="lazy" src="${API}${r.imageUrl}" alt="${tcase(r.name)}" class="flip-in" />
+      </div>
       <div class="name fade-up">${tcase(r.name)}</div>
     `;
   }
 
-  // Update the "last updated" stamp
-  document.getElementById('stamp').textContent =
-    "Last updated: " + new Date().toLocaleTimeString();
+  const now = new Date();
+  const time = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric', minute: '2-digit', second: '2-digit'
+  }).format(now);
+  document.getElementById('stamp').textContent = "Last updated: " + time;
 }
 
 load();
