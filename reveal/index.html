@@ -177,7 +177,10 @@
     ).join(" ");
   }
   function normalizeSlug(n){ return (n||"").trim().toLowerCase().replace(/\s+/g,'-'); }
-  function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
+  function setStamp(iso) {
+    const dt = iso ? new Date(iso) : new Date();
+    stamp.textContent = "Revealed " + dt.toLocaleString();
+  }
 
   // Person-specific & savage greetings
   const PERSONAL_GREETINGS = {
@@ -221,16 +224,19 @@
       : NEGATIVE_BUTTONS[Math.floor(Math.random() * NEGATIVE_BUTTONS.length)];
   }
 
-  async function fetchSlotFor(name) {
+  async function fetchSlotAndTime(name) {
     try {
       const res = await fetch(`${API}/state`, { cache: "no-store" });
-      if (!res.ok) return null;
-      const rows = await res.json(); // [{name, slug, slot, imageUrl}]
-      const slug = normalizeSlug(name);
+      if (!res.ok) return { slot: null, revealedAt: null };
+      const rows = await res.json(); // [{name, slug, slot, imageUrl, revealedAt}]
+      const slug = (name || "").trim().toLowerCase().replace(/\s+/g,'-');
       const me = rows.find(r => r.slug === slug);
-      return me?.slot ?? null;
-    } catch { return null; }
+      return { slot: me?.slot ?? null, revealedAt: me?.revealedAt ?? null };
+    } catch {
+      return { slot: null, revealedAt: null };
+    }
   }
+  
   function critique(slot, displayName) {
     const n = displayName || "You";
     if (slot === 1)  return `${n}, pick #1 — enjoy it while it lasts. No excuses now.`;
@@ -293,7 +299,31 @@
       // hide greeting while we load; we’ll replace it with critique after
       greetEl.hidden = true;
 
-      // Attach handlers BEFORE setting src (avoid missing cached load)
+      // // Attach handlers BEFORE setting src (avoid missing cached load)
+      // imgEl.onload = async () => {
+      //   stopLoading();
+      //   imgEl.hidden = false;
+      //   card.style.display = "block";   // override CSS display:none
+        
+      //   // now that image is painted, hide logo and subtitle
+      //   if (logo) logo.style.display = 'none';
+      //   if (subtitle) subtitle.style.display = 'none';
+        
+      //   // controls already hidden; keep them hidden after reveal
+      //   setStamp();
+
+      //   const slug = normalizeSlug(name);
+      //   const canonUrl = `${API}/image/${slug}.png`;
+      //   canon.href = canonUrl;
+      //   // leave textContent alone (link is hidden)
+        
+      //   const slot = await fetchSlotFor(name).catch(() => null);
+      //   greetEl.textContent = slot
+      //     ? critique(slot, displayName)
+      //     : "Revealed. If the pick sucks, blame latency.";
+      //   greetEl.hidden = false;         // show roast/praise
+      // };
+
       imgEl.onload = async () => {
         stopLoading();
         imgEl.hidden = false;
@@ -303,19 +333,16 @@
         if (logo) logo.style.display = 'none';
         if (subtitle) subtitle.style.display = 'none';
         
-        // controls already hidden; keep them hidden after reveal
-        setStamp();
-
-        const slug = normalizeSlug(name);
-        const canonUrl = `${API}/image/${slug}.png`;
-        canon.href = canonUrl;
-        // leave textContent alone (link is hidden)
-        
-        const slot = await fetchSlotFor(name).catch(() => null);
+        // NEW: pull both slot and revealedAt from /state
+        const { slot, revealedAt } = await fetchSlotAndTime(name);
+      
+        // set the stamp using the true reveal time (falls back to now if missing)
+        setStamp(revealedAt);
+      
+        const displayName = titleCaseName(name);
         greetEl.textContent = slot
           ? critique(slot, displayName)
           : "Revealed. If the pick sucks, blame latency.";
-        greetEl.hidden = false;         // show roast/praise
       };
 
       imgEl.onerror = () => {
