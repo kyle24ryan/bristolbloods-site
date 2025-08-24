@@ -25,29 +25,27 @@
   @media (max-width:560px){ .stack{ width:min(92vw, var(--stack-mobile)); } }
 
   /* Logo */
-  .logo { margin-bottom: 4px; max-width: 350px }
-  .logo picture{ display:block }
-  .logo img{ width:100%; height:auto; display:block }
+  .logo { margin-bottom: 4px; max-width: 300px; }
+  .logo picture { display:block }
+  .logo img { width:100%; height:auto; display:block; }
   @media (max-width:560px){
-    .logo{ max-width: 200px }
-    .logo img{ content:url("/assets/logo-red-stacked.svg") }
+    .logo { max-width: 400px; }
+    .logo img { content:url("/assets/logo-red-stacked.svg"); }
   }
 
   .sub{ color:#bdbdbd; font-weight:600; margin:0 0 6px }
+
+  /* narrower greeting for mobile/desktop */
   .greet{
     font-size: clamp(18px, 3.6vw, 28px);
     font-weight:800;
     margin:4px auto 10px;
-    text-wrap:balance;
-  }
-  @media (max-width:560px){
-    .greet{ max-width: 26ch }  /* tighter line length on phones */
+    max-width: 28ch;         /* <= keeps it from spanning too wide */
   }
 
-  /* Reveal control row (kept height so loader swaps in with no jump) */
-  .row{
-    width:100%; display:flex; justify-content:center; align-items:center; gap:10px;
-    min-height:56px;  /* reserve space where the button/spinner lives */
+  /* Reveal control */
+  .reveal{
+    width:100%; display:flex; justify-content:center; align-items:stretch; gap:10px;
   }
   .btn{
     box-sizing:border-box; padding:14px 18px;
@@ -59,13 +57,15 @@
   .btn:active{ transform:scale(.98) }
   .btn[disabled]{ opacity:.6; cursor:not-allowed }
 
-  /* Loader: centered column, message under the spinner, appears where the button was */
-  .loader{
-    display:none; flex-direction:column; align-items:center; justify-content:center;
+  /* Loader — centered where button was, message underneath */
+  .loader {
+    display:none;
+    width:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:12px; color:#aaa;
   }
-  .spinner{
-    width:22px; height:22px; border-radius:50%;
+  .spinner {
+    width:26px; height:26px; border-radius:50%;
     border:3px solid #333; border-top-color:#fff; animation: spin .8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg) } }
@@ -77,24 +77,20 @@
     padding:12px; display:none;
   }
   .card img{ width:100%; height:auto; display:block; border-radius:10px; background:#000 }
+
   .meta{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;
     margin-top:10px; color:#999; font-size:13px;
   }
-
-  /* Canonical link kept for copy/share but hidden from UI */
-  .visually-hidden{
-    position:absolute !important; width:1px; height:1px;
-    padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0);
-    white-space:nowrap; border:0;
-  }
+  /* Hide canonical link from UI but keep it for copy/share */
+  #canon { display:none }
 
   .nav{
     display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
     width:100%; margin-top:8px;
   }
   .ghost{
-    display:flex; align-items:center; justify-content:center; gap:8px;
+    display:flex; align-items:center; justify-content:center; gap:10px;
     padding:12px; border-radius:12px; background:#151515; color:#fff;
     border:1px solid #2a2a2a; text-decoration:none; font-weight:800;
   }
@@ -103,7 +99,7 @@
 </style>
 
 <div class="wrap">
-  <!-- Logo (stays visible until the card finishes loading) -->
+  <!-- Logo -->
   <div class="logo stack" id="logo">
     <picture>
       <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
@@ -115,36 +111,31 @@
   <div class="sub stack" id="sub">Draft Order Reveal</div>
   <div id="greet" class="greet stack"></div>
 
-  <!-- Button row / Loader swap -->
-  <div class="row stack">
+  <!-- Reveal control -->
+  <div class="reveal stack" id="controls">
     <button id="revealBtn" class="btn">Reveal my fate</button>
+  </div>
 
-    <div id="loading" class="loader" aria-live="polite" aria-atomic="true">
-      <div class="spinner" aria-hidden="true"></div>
-      <div id="loadingText">Summoning your draft card…</div>
-    </div>
+  <!-- Loader -->
+  <div id="loading" class="loader stack" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <div id="loadingText">Summoning your draft card…</div>
   </div>
 
   <!-- Image result -->
   <div id="result" class="card stack">
-    <img id="cardImg" alt="Draft reveal card" />
+    <img id="cardImg" alt="Draft reveal card" decoding="async" loading="eager" crossorigin="anonymous" />
     <div class="meta">
       <span id="stamp"></span>
-      <a id="canon" class="visually-hidden" target="_blank" rel="noopener">Open image URL</a>
+      <a id="canon" class="link" target="_blank" rel="noopener">Open image URL</a>
     </div>
     <div class="nav">
       <a class="ghost" href="/overview/">
-        <!-- clipboard list icon -->
-        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2Zm0 2v1h6V4H9Zm1 6h8v2h-8V8Zm0 4h8v2h-8v-2ZM6 8h2v2H6V8Zm0 4h2v2H6v-2Z"/>
-        </svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 6h12M3 18h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
         Draft Order
       </a>
       <a class="ghost" href="/">
-        <!-- home icon -->
-        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 3 3 10h2v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9h2L12 3z"/>
-        </svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Home
       </a>
     </div>
@@ -162,6 +153,7 @@
   const logoEl    = document.getElementById('logo');
   const subEl     = document.getElementById('sub');
   const greetEl   = document.getElementById('greet');
+  const controls  = document.getElementById('controls');
   const btn       = document.getElementById('revealBtn');
   const loading   = document.getElementById('loading');
   const loadingText = document.getElementById('loadingText');
@@ -169,10 +161,6 @@
   const imgEl     = document.getElementById('cardImg');
   const stamp     = document.getElementById('stamp');
   const canon     = document.getElementById('canon');
-
-  // Make image decode eagerly & async for faster paint
-  imgEl.decoding = "async";
-  imgEl.loading  = "eager";
 
   // Helpers
   function titleCaseName(raw) {
@@ -183,9 +171,10 @@
     ).join(" ");
   }
   function normalizeSlug(n){ return (n||"").trim().toLowerCase().replace(/\s+/g,'-'); }
+  function show(el, yes){ el.style.display = yes ? "" : "none"; }
   function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
 
-  // Person-specific & savage greetings
+  // Greetings (same as your working set)
   const PERSONAL_GREETINGS = {
     "james":  "{name}, ready to run it back?",
     "erica":  "{name}, who are you splitting the pot with this year?",
@@ -230,7 +219,7 @@
     try {
       const res = await fetch(`${API}/state`, { cache: "no-store" });
       if (!res.ok) return null;
-      const rows = await res.json(); // [{name, slug, slot, imageUrl}]
+      const rows = await res.json();
       const slug = normalizeSlug(name);
       const me = rows.find(r => r.slug === slug);
       return me?.slot ?? null;
@@ -248,52 +237,56 @@
     return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
   }
 
-  // Initial UI
+  // initial greeting + button text (visible pre-click)
+  const displayName = titleCaseName(name);
   greetEl.textContent = pickGreeting(name);
   btn.textContent = pickButtonBlurb();
 
-  // Escalating loading messages
-  let timers = [];
+  // loading copy escalation
+  let _loadingTimers = [];
   function startLoading() {
     loading.style.display = "flex";
     loadingText.textContent = "Summoning your draft card…";
-    timers = [
-      setTimeout(() => loadingText.textContent = "Still working… greatness (or disaster) takes time.", 3000),
-      setTimeout(() => loadingText.textContent = "AI is arguing with itself about how ugly this is.", 7000),
-      setTimeout(() => loadingText.textContent = "Almost there. It’s carefully crafting your public humiliation.", 12000),
+    const steps = [
+      [5000,  "Still working… greatness (or disaster) takes time."],
+      [10000,  "AI is arguing with itself about how ugly you are."],
+      [20000, "Almost there. It’s carefully crafting your public humiliation."]
     ];
+    _loadingTimers = steps.map(([ms, msg]) => setTimeout(() => (loadingText.textContent = msg), ms));
   }
-  function stopLoading() { loading.style.display = "none"; timers.forEach(clearTimeout); timers = []; }
+  function stopLoading() {
+    loading.style.display = "none";
+    _loadingTimers.forEach(clearTimeout);
+    _loadingTimers = [];
+  }
 
   if (!name) {
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
     btn.onclick = () => {
-      // Swap button -> loader in-place
+      // hide button immediately; show centered spinner + message
       btn.style.display = "none";
       startLoading();
 
-      // Keep the logo & subtitle visible during loading. We’ll hide them after the image paints.
-
-      // Hook image events BEFORE setting src
+      // attach handlers before setting src
       imgEl.onload = async () => {
         stopLoading();
-        // Now hide logo and subtitle after the card is ready
+
+        // hide logo + subtitle only after the image paints
         if (logoEl) logoEl.style.display = 'none';
         if (subEl)  subEl.style.display  = 'none';
 
-        card.style.display = "";         // show the card
+        controls.style.display = 'none';
+        card.style.display = "";
         setStamp();
 
-        // Canonical (hidden)
+        // hidden canonical for share/copy if needed
         const slug = normalizeSlug(name);
-        const canonUrl = `${API}/image/${slug}.png`;
-        canon.href = canonUrl;
+        canon.href = `${API}/image/${slug}.png`;
 
-        // Slot roast/praise
+        // slot roast
         const slot = await fetchSlotFor(name);
-        const displayName = titleCaseName(name);
         greetEl.textContent = slot
           ? critique(slot, displayName)
           : "Revealed. If the pick sucks, blame latency.";
@@ -302,14 +295,13 @@
       imgEl.onerror = () => {
         stopLoading();
         alert(`Could not load card for "${name}". Try again.`);
-        btn.style.display = "";  // bring the button back
+        btn.style.display = "";  // restore button
       };
 
-      // Trigger download (cache bust)
+      // working path: direct src to PNG endpoint (cache-busted)
       imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
     };
 
-    // Autoplay if requested
     if (qs.get("autoplay") === "1") btn.click();
   }
 </script>
