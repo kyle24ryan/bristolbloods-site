@@ -8,8 +8,8 @@
   :root{
     color-scheme: dark;
     --red:#e11;
-    --stack: 680px;         /* desktop/tablet max width */
-    --stack-mobile: 380px;  /* phone max width */
+    --stack: 680px;
+    --stack-mobile: 380px;
   }
   html, body { height:100%; margin:0 }
   body{
@@ -25,23 +25,29 @@
   @media (max-width:560px){ .stack{ width:min(92vw, var(--stack-mobile)); } }
 
   /* Logo */
-  .logo {
-    margin-bottom: 4px;
-    max-width: 300px;   /* keep it modest on desktop */
-  }
-  .logo picture { display:block }
-  .logo img { width:100%; height:auto; display:block; }
+  .logo { margin-bottom: 4px; max-width: 300px }
+  .logo picture{ display:block }
+  .logo img{ width:100%; height:auto; display:block }
   @media (max-width:560px){
-    .logo { max-width: 200px; }   /* smaller on phones */
-    .logo img { content:url("/assets/logo-red-stacked.svg"); }
+    .logo{ max-width: 200px }
+    .logo img{ content:url("/assets/logo-red-stacked.svg") }
   }
 
   .sub{ color:#bdbdbd; font-weight:600; margin:0 0 6px }
-  .greet{ font-size: clamp(18px, 3.6vw, 28px); font-weight:800; margin:4px 0 10px }
+  .greet{
+    font-size: clamp(18px, 3.6vw, 28px);
+    font-weight:800;
+    margin:4px auto 10px;
+    text-wrap:balance;
+  }
+  @media (max-width:560px){
+    .greet{ max-width: 26ch }  /* tighter line length on phones */
+  }
 
-  /* Reveal control */
-  .reveal{
-    width:100%; display:flex; justify-content:center; align-items:stretch; gap:10px;
+  /* Reveal control row (kept height so loader swaps in with no jump) */
+  .row{
+    width:100%; display:flex; justify-content:center; align-items:center; gap:10px;
+    min-height:56px;  /* reserve space where the button/spinner lives */
   }
   .btn{
     box-sizing:border-box; padding:14px 18px;
@@ -53,10 +59,13 @@
   .btn:active{ transform:scale(.98) }
   .btn[disabled]{ opacity:.6; cursor:not-allowed }
 
-  /* Loader */
-  .loader { display:none; gap:10px; align-items:center; justify-content:center; color:#aaa; }
-  .spinner {
-    width:18px; height:18px; border-radius:50%;
+  /* Loader: centered column, message under the spinner, appears where the button was */
+  .loader{
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; color:#aaa;
+  }
+  .spinner{
+    width:22px; height:22px; border-radius:50%;
     border:3px solid #333; border-top-color:#fff; animation: spin .8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg) } }
@@ -72,24 +81,30 @@
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;
     margin-top:10px; color:#999; font-size:13px;
   }
-  .link, .link:visited { color:#9cf; text-decoration:none; }
-  .link:hover{ text-decoration:underline }
+
+  /* Canonical link kept for copy/share but hidden from UI */
+  .visually-hidden{
+    position:absolute !important; width:1px; height:1px;
+    padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0);
+    white-space:nowrap; border:0;
+  }
 
   .nav{
     display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
     width:100%; margin-top:8px;
   }
   .ghost{
-    display:flex; align-items:center; justify-content:center;
+    display:flex; align-items:center; justify-content:center; gap:8px;
     padding:12px; border-radius:12px; background:#151515; color:#fff;
     border:1px solid #2a2a2a; text-decoration:none; font-weight:800;
   }
   .ghost:hover{ border-color:#3a3a3a }
+  .icon{ width:18px; height:18px; display:inline-block; }
 </style>
 
 <div class="wrap">
-  <!-- Logo -->
-  <div class="logo stack">
+  <!-- Logo (stays visible until the card finishes loading) -->
+  <div class="logo stack" id="logo">
     <picture>
       <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
       <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods">
@@ -97,18 +112,17 @@
   </div>
 
   <!-- Subtitle + Greeting -->
-  <div class="sub stack">Draft Order Reveal</div>
+  <div class="sub stack" id="sub">Draft Order Reveal</div>
   <div id="greet" class="greet stack"></div>
 
-  <!-- Reveal control -->
-  <div class="reveal stack" id="controls">
+  <!-- Button row / Loader swap -->
+  <div class="row stack">
     <button id="revealBtn" class="btn">Reveal my fate</button>
-  </div>
 
-  <!-- Loader -->
-  <div id="loading" class="loader stack" aria-live="polite">
-    <div class="spinner" aria-hidden="true"></div>
-    <div id="loadingText">Summoning the AI, sharpening the knives…</div>
+    <div id="loading" class="loader" aria-live="polite" aria-atomic="true">
+      <div class="spinner" aria-hidden="true"></div>
+      <div id="loadingText">Summoning your draft card…</div>
+    </div>
   </div>
 
   <!-- Image result -->
@@ -116,11 +130,23 @@
     <img id="cardImg" alt="Draft reveal card" />
     <div class="meta">
       <span id="stamp"></span>
-      <a id="canon" class="link" target="_blank" rel="noopener">Open image URL</a>
+      <a id="canon" class="visually-hidden" target="_blank" rel="noopener">Open image URL</a>
     </div>
     <div class="nav">
-      <a class="ghost" href="/overview/">See how the rest of these losers made out →</a>
-      <a class="ghost" href="/">Back to home</a>
+      <a class="ghost" href="/overview/">
+        <!-- clipboard list icon -->
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M9 2h6a2 2 0 0 1 2 2h2a1 1 0 0 1 1 1v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2-2Zm0 2v1h6V4H9Zm1 6h8v2h-8V8Zm0 4h8v2h-8v-2ZM6 8h2v2H6V8Zm0 4h2v2H6v-2Z"/>
+        </svg>
+        Draft Order
+      </a>
+      <a class="ghost" href="/">
+        <!-- home icon -->
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 3 3 10h2v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9h2L12 3z"/>
+        </svg>
+        Home
+      </a>
     </div>
   </div>
 </div>
@@ -133,7 +159,8 @@
   const rawName   = (qs.get("name") || "").trim();
   const name      = rawName || "";
 
-  const logo      = document.querySelector('.logo');
+  const logoEl    = document.getElementById('logo');
+  const subEl     = document.getElementById('sub');
   const greetEl   = document.getElementById('greet');
   const btn       = document.getElementById('revealBtn');
   const loading   = document.getElementById('loading');
@@ -142,13 +169,12 @@
   const imgEl     = document.getElementById('cardImg');
   const stamp     = document.getElementById('stamp');
   const canon     = document.getElementById('canon');
-  const controls  = document.getElementById('controls');
 
-  // image decode hints
+  // Make image decode eagerly & async for faster paint
   imgEl.decoding = "async";
   imgEl.loading  = "eager";
 
-  // ---- Helpers ----
+  // Helpers
   function titleCaseName(raw) {
     return (raw || "").trim().toLowerCase().split(/\s+/).map(part =>
       part.split(/([-'])/).map(seg =>
@@ -178,15 +204,6 @@
     "Let’s see how fast you tilt this year, {name}.",
     "Brace yourself, {name}. The draft board is about to bully you."
   ];
-  function pickGreeting(raw) {
-    const display = titleCaseName(raw);
-    const key = (raw || "").trim().toLowerCase();
-    const tpl = PERSONAL_GREETINGS[key] ||
-                SAVAGE_GREETINGS[Math.floor(Math.random() * SAVAGE_GREETINGS.length)];
-    return tpl.replaceAll("{name}", display || "Stranger");
-  }
-
-  // Button blurbs (80% savage / 20% positive)
   const NEGATIVE_BUTTONS = [
     "Reveal my fate","Spin the wheel of shame","Show me my doom","Draft me dirty",
     "Let’s see the carnage","Unveil the humiliation","Deal me my pain","Destroy my hope",
@@ -195,6 +212,14 @@
   const POSITIVE_BUTTONS = [
     "Crown me champ early","Let’s see my dynasty","Load up the trophy","Bless me with greatness"
   ];
+
+  function pickGreeting(raw) {
+    const display = titleCaseName(raw);
+    const key = (raw || "").trim().toLowerCase();
+    const tpl = PERSONAL_GREETINGS[key] ||
+                SAVAGE_GREETINGS[Math.floor(Math.random() * SAVAGE_GREETINGS.length)];
+    return tpl.replaceAll("{name}", display || "Stranger");
+  }
   function pickButtonBlurb() {
     return Math.random() < 0.2
       ? POSITIVE_BUTTONS[Math.floor(Math.random() * POSITIVE_BUTTONS.length)]
@@ -211,93 +236,80 @@
       return me?.slot ?? null;
     } catch { return null; }
   }
+
   function critique(slot, displayName) {
     const n = displayName || "You";
     if (slot === 1)  return `${n}, pick #1 — enjoy it while it lasts. No excuses now.`;
     if (slot === 12) return `${n}, pick #12 — snake blessings. Try not to waste the double tap.`;
-    if (slot <= 3)   return `Pick #${slot} — premium spot. Even you can’t mess *this* up… probably.`;
+    if (slot <= 3)   return `Pick #${slot} — early enough to dream, late enough to blame the board.`;
     if (slot <= 5)   return `Pick #${slot} — early enough to dream, late enough to blame the board.`;
     if (slot <= 8)   return `Pick #${slot} — solid middle-upper. You’ll still find a way to tilt.`;
     if (slot <= 10)  return `Pick #${slot} — mid-pack misery. Out-draft or out-whine: your choice.`;
     return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
   }
 
-  // --- Initial UI state: show greeting if we have a name ---
-  const displayName = titleCaseName(name);
-  if (name) {
-    greetEl.textContent = pickGreeting(name);
-    greetEl.hidden = false;          // visible before click
-  } else {
-    greetEl.hidden = true;
-  }
+  // Initial UI
+  greetEl.textContent = pickGreeting(name);
   btn.textContent = pickButtonBlurb();
 
-  // Loading text that escalates
-  let _loadingTimers = [];
+  // Escalating loading messages
+  let timers = [];
   function startLoading() {
     loading.style.display = "flex";
     loadingText.textContent = "Summoning your draft card…";
-    const steps = [
-      [3000,  "Still working… greatness (or disaster) takes time."],
-      [7000,  "AI is arguing with itself about how ugly this is."],
-      [12000, "Almost there. It’s carefully crafting your public humiliation."]
+    timers = [
+      setTimeout(() => loadingText.textContent = "Still working… greatness (or disaster) takes time.", 3000),
+      setTimeout(() => loadingText.textContent = "AI is arguing with itself about how ugly this is.", 7000),
+      setTimeout(() => loadingText.textContent = "Almost there. It’s carefully crafting your public humiliation.", 12000),
     ];
-    _loadingTimers = steps.map(([ms, msg]) => setTimeout(() => (loadingText.textContent = msg), ms));
   }
-  function stopLoading() {
-    loading.style.display = "none";
-    _loadingTimers.forEach(clearTimeout);
-    _loadingTimers = [];
-  }
+  function stopLoading() { loading.style.display = "none"; timers.forEach(clearTimeout); timers = []; }
 
-  // No name? Send home.
   if (!name) {
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
     btn.onclick = () => {
-      btn.disabled = true;
+      // Swap button -> loader in-place
+      btn.style.display = "none";
       startLoading();
 
-      if (logo) logo.style.display = 'none';
-      card.style.display = 'none';
-      imgEl.hidden = true;
+      // Keep the logo & subtitle visible during loading. We’ll hide them after the image paints.
 
-      // hide greeting while we load, will re-show with critique
-      greetEl.hidden = true;
-
-      // Attach handlers BEFORE setting src (avoid missing cached load)
+      // Hook image events BEFORE setting src
       imgEl.onload = async () => {
         stopLoading();
-        imgEl.hidden = false;
-        card.style.display = "block";   // override CSS display:none
-        controls.style.display = 'none';
+        // Now hide logo and subtitle after the card is ready
+        if (logoEl) logoEl.style.display = 'none';
+        if (subEl)  subEl.style.display  = 'none';
+
+        card.style.display = "";         // show the card
         setStamp();
 
+        // Canonical (hidden)
         const slug = normalizeSlug(name);
         const canonUrl = `${API}/image/${slug}.png`;
         canon.href = canonUrl;
-        canon.textContent = canonUrl;
 
-        const slot = await fetchSlotFor(name).catch(() => null);
+        // Slot roast/praise
+        const slot = await fetchSlotFor(name);
+        const displayName = titleCaseName(name);
         greetEl.textContent = slot
           ? critique(slot, displayName)
           : "Revealed. If the pick sucks, blame latency.";
-        greetEl.hidden = false;         // show roast/praise
       };
 
       imgEl.onerror = () => {
         stopLoading();
         alert(`Could not load card for "${name}". Try again.`);
-        btn.disabled = false;
-        if (logo) logo.style.display = '';
+        btn.style.display = "";  // bring the button back
       };
 
-      // Trigger the load (cache-busted)
+      // Trigger download (cache bust)
       imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
     };
 
-    // Autoplay supported
+    // Autoplay if requested
     if (qs.get("autoplay") === "1") btn.click();
   }
 </script>
