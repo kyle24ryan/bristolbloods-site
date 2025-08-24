@@ -1,0 +1,18 @@
+{
+  "name": "bristol-bloods-api",
+  "main": "src/worker.ts",
+  "compatibility_date": "2024-11-01",
+
+  "durable_objects": {
+    "bindings": [{ "name": "LEAGUE", "class_name": "LeagueDO" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LeagueDO"] }],
+
+  "r2_buckets": [
+    { "binding": "CARDS", "bucket_name": "bristol-bloods" }
+  ],
+
+  "routes": [
+    { "pattern": "api.bristolbloods.com/*", "zone_name": "bristolbloods.com" }
+  ]
+}
