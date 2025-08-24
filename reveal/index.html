@@ -222,10 +222,14 @@
     return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
   }
 
-  // Initial UI state
+  // --- Initial UI state: show greeting if we have a name ---
   const displayName = titleCaseName(name);
-  greetEl.textContent = pickGreeting(name);  // placeholder text
-  greetEl.hidden = true;                     // keep hidden until we have slot
+  if (name) {
+    greetEl.textContent = pickGreeting(name);
+    greetEl.hidden = false;          // visible before click
+  } else {
+    greetEl.hidden = true;
+  }
   btn.textContent = pickButtonBlurb();
 
   // Loading text that escalates
@@ -258,13 +262,15 @@
       if (logo) logo.style.display = 'none';
       card.style.display = 'none';
       imgEl.hidden = true;
+
+      // hide greeting while we load, will re-show with critique
       greetEl.hidden = true;
 
-      // Handlers FIRST so we don't miss a cached load
+      // Attach handlers BEFORE setting src (avoid missing cached load)
       imgEl.onload = async () => {
         stopLoading();
         imgEl.hidden = false;
-        card.style.display = "block";   // <-- critical: override CSS display:none
+        card.style.display = "block";   // override CSS display:none
         controls.style.display = 'none';
         setStamp();
 
@@ -277,7 +283,7 @@
         greetEl.textContent = slot
           ? critique(slot, displayName)
           : "Revealed. If the pick sucks, blame latency.";
-        greetEl.hidden = false;
+        greetEl.hidden = false;         // show roast/praise
       };
 
       imgEl.onerror = () => {
@@ -287,7 +293,7 @@
         if (logo) logo.style.display = '';
       };
 
-      // Now trigger the load (cache-busted)
+      // Trigger the load (cache-busted)
       imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
     };
 
