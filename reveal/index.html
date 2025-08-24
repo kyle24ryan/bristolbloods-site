@@ -259,43 +259,43 @@
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
-    const logoEl = document.querySelector('.logo');
+    const logoEl   = document.querySelector('.logo');
     const controls = document.getElementById('controls');
 
-    // DIRECT <img src> FLOW (no CORS)
     btn.onclick = () => {
       btn.disabled = true;
       startLoading();
+
       if (logoEl) logoEl.style.display = 'none';
       card.style.display = 'none';
       imgEl.hidden = true;
-      greetEl.hidden = true; // NEW: hide entirely
+      greetEl.hidden = true;
 
-      // Bust caches so each reveal loads fresh if someone re-tries
-      imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
-
+      // 1) Attach handlers FIRST (so we don't miss a cached load)
       imgEl.onload = async () => {
         stopLoading();
         imgEl.hidden = false;
-        card.style.display = "";
+        card.style.display = "";          // show the card
         controls.style.display = 'none';
         setStamp();
 
-        // Canonical, persisted URL
+        // Canonical persisted URL
         const slug = normalizeSlug(name);
         const canonUrl = `${API}/image/${slug}.png`;
         canon.href = canonUrl;
         canon.textContent = canonUrl;
 
-        // Slot roast/praise
+        // Slot-based roast/praise text
         try {
           const slot = await fetchSlotFor(name);
-          greetEl.textContent = slot ? critique(slot, displayName)
-                                     : "Computer says you exist. Draft board will decide the rest.";
+          const displayName = titleCaseName(name);
+          greetEl.textContent = slot
+            ? critique(slot, displayName)
+            : "Revealed. If the pick sucks, blame latency.";
         } catch {
           greetEl.textContent = "Revealed. If the pick sucks, blame latency.";
         }
-        greetEl.hidden = false; // NEW: show the final message
+        greetEl.hidden = false;           // finally show greeting
       };
 
       imgEl.onerror = () => {
@@ -304,9 +304,12 @@
         btn.disabled = false;
         if (logoEl) logoEl.style.display = '';
       };
+
+      // 2) THEN set the src (cache-busted)
+      imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
     };
 
-    // Only autoplay if we actually have a name // NEW
-    if (qs.get("autoplay") === "1" && name) btn.click();
+    // Autoplay only if a name exists
+    if (qs.get("autoplay") === "1") btn.click();
   }
 </script>
