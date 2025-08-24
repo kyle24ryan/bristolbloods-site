@@ -270,6 +270,7 @@
     ];
     _loadingTimers = steps.map(([ms, msg]) => setTimeout(() => (loadingText.textContent = msg), ms));
   }
+  
   function stopLoading() {
     loading.style.display = "none";
     _loadingTimers.forEach(clearTimeout);
@@ -343,6 +344,8 @@
         greetEl.textContent = slot
           ? critique(slot, displayName)
           : "Revealed. If the pick sucks, blame latency.";
+
+        greetEl.hidden = false;
       };
 
       imgEl.onerror = () => {
