@@ -29,7 +29,7 @@
     width:min(92vw, 760px);           /* desktop cap */
   }
   @media (max-width:560px){
-    .logo { width:min(92vw, 240px); } /* stacked is taller; keep width modest */
+    .logo { width:min(92vw, 350px); } /* stacked is taller; keep width modest */
   }
 
   /* Card-ish container for the coming-soon message */
@@ -66,15 +66,6 @@
   .btn--primary{ --bg:var(--red); --bd:var(--red) }
 
   .icon{ width:18px; height:18px; display:inline-block }
-
-  /* Subtle bandana backdrop (optional – remove if you don’t want it here) */
-  body::before{
-    content:""; position:fixed; inset:0; pointer-events:none;
-    background:
-      radial-gradient(300px 240px at 80% 15%, rgba(255,17,17,.08), transparent 60%),
-      radial-gradient(260px 220px at 10% 80%, rgba(255,17,17,.06), transparent 65%);
-    opacity:.9;
-  }
 </style>
 
 <div class="wrap">
@@ -87,11 +78,10 @@
   </div>
 
   <div class="panel">
-    <div class="badge">Keepers</div>
     <h1>Coming Soon</h1>
     <p class="sub">
-      We’re polishing the shrine to your worst decisions.  
-      Check back soon for the full keeper rundown.
+      Your future regrets are being formatted.
+      Keeper reveal coming soon.
     </p>
 
     <div class="row">
