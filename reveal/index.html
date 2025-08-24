@@ -217,15 +217,15 @@
     } catch { return null; }
   }
 
-  function slotMessage(slot, displayName) {
-    if (!slot) return "";
-    // Customize as you like:
-    if (slot === 1) return `Pick #1 — enjoy your “choice” and the pressure, ${displayName}. No excuses.`;
-    if (slot === 12) return `Pick #12 — snake double-tap, ${displayName}. Pray for miracles.`;
-    if (slot <= 3) return `Pick #${slot} — premium real estate, ${displayName}. Don’t blow it.`;
-    if (slot <= 6) return `Pick #${slot} — solid middle-upper. You’ll still find a way to tilt.`;
-    if (slot <= 9) return `Pick #${slot} — the Bermuda Triangle of drafts. Good luck, ${displayName}.`;
-    return `Pick #${slot} — late round life: heavy lifting ahead, ${displayName}.`;
+  function critique(slot, displayName) {
+    const n = displayName || "You";
+    if (slot === 1)  return `${n}, pick #1 — enjoy it while it lasts. No excuses now.`;
+    if (slot === 12) return `${n}, pick #12 — snake blessings. Try not to waste the double tap.`;
+    if (slot <= 3)   return `Pick #${slot} — premium spot. Even you can’t mess *this* up… probably.`;
+    if (slot <= 5)   return `Pick #${slot} — early enough to dream, late enough to blame the board.`;
+    if (slot <= 8)   return `Pick #${slot} — solid middle-upper. You’ll still find a way to tilt.`;
+    if (slot <= 10)  return `Pick #${slot} — mid-pack misery. Out-draft or out-whine: your choice.`;
+    return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
   }
 
   // --- init greeting + button text
@@ -233,108 +233,80 @@
   greetEl.textContent = pickGreeting(name);
   btn.textContent = pickButtonBlurb();
 
+  // NEW: keep greeting hidden until we have the slot roast
+  greetEl.hidden = true;
+
+  // -------- loading copy that escalates --------
+  let _loadingTimers = [];
+  function startLoading() {
+    loading.style.display = "flex";
+    loadingText.textContent = "Summoning your draft card…";
+    const steps = [
+      [3000,  "Still working… greatness (or disaster) takes time."],
+      [7000,  "AI is arguing with itself about how ugly this is."],
+      [12000, "Almost there. It’s carefully crafting your public humiliation."]
+    ];
+    _loadingTimers = steps.map(([ms, msg]) => setTimeout(() => (loadingText.textContent = msg), ms));
+  }
+  function stopLoading() {
+    loading.style.display = "none";
+    _loadingTimers.forEach(clearTimeout);
+    _loadingTimers = [];
+  }
+
   // No name? Send back to home.
   if (!name) {
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
-    // -------- loading copy that escalates --------
-    let _loadingTimers = [];
-    function startLoading() {
-      loading.style.display = "flex";
-      loadingText.textContent = "Summoning your draft card…";
-      const steps = [
-        [3000,  "Still working… greatness (or disaster) takes time."],
-        [7000,  "AI is arguing with itself about how ugly this is."],
-        [12000, "Almost there. It’s carefully crafting your public humiliation."]
-      ];
-      _loadingTimers = steps.map(([ms, msg]) => setTimeout(() => (loadingText.textContent = msg), ms));
-    }
-    function stopLoading() {
-      loading.style.display = "none";
-      _loadingTimers.forEach(clearTimeout);
-      _loadingTimers = [];
-    }
-  
-    function normalizeSlug(n){ return (n||"").trim().toLowerCase().replace(/\s+/g,'-'); }
-    function titleCaseName(raw){
-      return (raw||"").trim().toLowerCase().split(/\s+/)
-        .map(w => w ? w[0].toUpperCase()+w.slice(1) : w).join(" ");
-    }
-    function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
-  
-    // Slot-based roast/praise
-    function critique(slot, displayName) {
-      const n = displayName || "You";
-      if (slot === 1)  return `${n}, pick #1 — enjoy it while it lasts. No excuses now.`;
-      if (slot === 12) return `${n}, pick #12 — snake blessings. Try not to waste the double tap.`;
-      if (slot <= 3)   return `Pick #${slot} — premium spot. Even you can’t mess *this* up… probably.`;
-      if (slot <= 5)   return `Pick #${slot} — early enough to dream, late enough to blame the board.`;
-      if (slot <= 8)   return `Pick #${slot} — solid middle-upper. You’ll still find a way to tilt.`;
-      if (slot <= 10)  return `Pick #${slot} — mid-pack misery. Out-draft or out-whine: your choice.`;
-      return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
-    }
-  
     const logoEl = document.querySelector('.logo');
     const controls = document.getElementById('controls');
-  
-    // ----- DIRECT <img src> FLOW (no CORS headaches) -----
+
+    // DIRECT <img src> FLOW (no CORS)
     btn.onclick = () => {
-      if (!name) { location.href = "/"; return; }
-  
-      // UI: prep
       btn.disabled = true;
       startLoading();
       if (logoEl) logoEl.style.display = 'none';
-      greetEl.textContent = "";          // clear the greeting for now
       card.style.display = 'none';
       imgEl.hidden = true;
-  
-      // kick the image load
-      const src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
-  
+      greetEl.hidden = true; // NEW: hide entirely
+
+      // Bust caches so each reveal loads fresh if someone re-tries
+      imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
+
       imgEl.onload = async () => {
-        // show the card
         stopLoading();
         imgEl.hidden = false;
         card.style.display = "";
         controls.style.display = 'none';
         setStamp();
-  
-        // canonical persisted URL
+
+        // Canonical, persisted URL
         const slug = normalizeSlug(name);
         const canonUrl = `${API}/image/${slug}.png`;
         canon.href = canonUrl;
         canon.textContent = canonUrl;
-  
-        // fetch state to learn the slot, then roast/praise
+
+        // Slot roast/praise
         try {
-          const r = await fetch(`${API}/state`, { cache: "no-store", mode: "cors" });
-          const rows = await r.json();
-          const me = rows.find(x => x.slug === slug);
-          if (me && me.slot) {
-            greetEl.textContent = critique(me.slot, titleCaseName(name));
-          } else {
-            greetEl.textContent = "Computer says you exist. Draft board will decide the rest.";
-          }
+          const slot = await fetchSlotFor(name);
+          greetEl.textContent = slot ? critique(slot, displayName)
+                                     : "Computer says you exist. Draft board will decide the rest.";
         } catch {
           greetEl.textContent = "Revealed. If the pick sucks, blame latency.";
         }
+        greetEl.hidden = false; // NEW: show the final message
       };
-  
+
       imgEl.onerror = () => {
         stopLoading();
         alert(`Could not load card for "${name}". Try again.`);
         btn.disabled = false;
-        if (logoEl) logoEl.style.display = ''; // show logo back if we failed
+        if (logoEl) logoEl.style.display = '';
       };
-  
-      imgEl.src = src; // important: direct <img> src instead of fetch(blob)
     };
-  
-    // Optional auto-play support (?autoplay=1)
-    if (new URLSearchParams(location.search).get("autoplay") === "1") {
-      btn.click();
-    }
+
+    // Only autoplay if we actually have a name // NEW
+    if (qs.get("autoplay") === "1" && name) btn.click();
   }
 </script>
