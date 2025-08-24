@@ -238,68 +238,76 @@
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
-    // ---- escalating loading messages ----
     let _loadingTimers = [];
-    function startLoading() {
-      show(loading, true);
-      loadingText.textContent = "Rolling the ball… painting your shame…";
-  
-      const steps = [
-        [3000,  "Still working… greatness (or disaster) takes time."],
-        [7000,  "AI is arguing with itself about how ugly you are."],
-        [12000, "Almost there. It’s carefully crafting your public humiliation."]
-      ];
-      _loadingTimers = steps.map(([ms, msg]) =>
-        setTimeout(() => (loadingText.textContent = msg), ms)
-      );
-    }
-    function stopLoading() {
-      show(loading, false);
-      for (const t of _loadingTimers) clearTimeout(t);
-      _loadingTimers = [];
-    }
-  
-    btn.onclick = async () => {
-      try {
-        // UI: begin
-        if (document.querySelector('.logo')) document.querySelector('.logo').style.display = 'none';
-        btn.disabled = true;
-        startLoading();
-        card.style.display = 'none';
-  
-        // Call the backend to generate/fetch the PNG (reliable blob flow)
-        const res = await fetch(`${API}/reveal?name=${encodeURIComponent(name)}`, {
-          method: "GET",
-          mode: "cors"
-        });
-        if (!res.ok) {
-          const msg = await res.text().catch(()=>res.statusText);
-          throw new Error(`Reveal failed (${res.status}): ${msg}`);
-        }
-  
-        // Turn into a blob URL and paint the image
-        const blob = await res.blob();
-        const url  = URL.createObjectURL(blob);
-        imgEl.src = "";
-        imgEl.src = url;
-  
-        // Canonical persisted URL (R2)
-        const slug = normalizeSlug(name);
-        const canonUrl = `${API}/image/${slug}.png`;
-        canon.href = canonUrl;
-        canon.textContent = canonUrl;
-  
-        setStamp();
-  
-        // UI: done
-        stopLoading();
-        card.style.display = "";
-        document.getElementById('controls').style.display = 'none';
-      } catch (err) {
-        stopLoading();
-        alert((err && err.message) ? err.message : "Something broke. Try again.");
-        btn.disabled = false;
+  function startLoading() {
+    loading.style.display = "flex";
+    loadingText.textContent = "Summoning your draft card…";
+    const steps = [
+      [3000,  "Still working… greatness (or disaster) takes time."],
+      [7000,  "AI is arguing with itself about how ugly you are."],
+      [12000, "Almost there. It’s carefully crafting your public humiliation."]
+    ];
+    _loadingTimers = steps.map(([ms, msg]) =>
+      setTimeout(() => (loadingText.textContent = msg), ms)
+    );
+  }
+  function stopLoading() { 
+    loading.style.display = "none";
+    _loadingTimers.forEach(clearTimeout);
+    _loadingTimers = [];
+  }
+  function normalizeSlug(n){ return (n||"").trim().toLowerCase().replace(/\s+/g,'-'); }
+  function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
+
+  btn.onclick = () => {
+    if (!name) { location.href = "/"; return; }
+
+    // match the working version’s behavior
+    btn.disabled = true;
+    startLoading();
+    imgEl.hidden = true;
+    card.style.display = "none";
+
+    // build URL (cache-busted) and let the <img> load it
+    const url = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
+
+    imgEl.onload = () => {
+      stopLoading();
+      imgEl.hidden = false;
+      card.style.display = "";                // show the card wrapper
+      btn.style.display = "none";             // hide the button
+
+      // canonical persisted URL
+      const slug = normalizeSlug(name);
+      const canonUrl = `${API}/image/${slug}.png`;
+      canon.href = canonUrl;
+      canon.textContent = canonUrl;
+
+      setStamp();
+
+      // append the “losers” link if not present (exactly like the working file)
+      const wrap = document.querySelector(".wrap");
+      if (!document.getElementById("losersLink")) {
+        const p = document.createElement("p");
+        p.id = "losersLink";
+        p.style.marginTop = "14px";
+        p.innerHTML = `<a href="/overview/">See how the rest of these losers made out →</a>`;
+        wrap.appendChild(p);
       }
     };
+
+    imgEl.onerror = () => {
+      stopLoading();
+      alert(`Could not load card for "${name}". Try again.`);
+      btn.disabled = false;
+    };
+
+    imgEl.src = url; // <- the key difference: no fetch(), just set src
+  };
+
+  // Optional: auto-start if ?autoplay=1 (preserved)
+  if (new URLSearchParams(location.search).get("autoplay") === "1") {
+    btn.click();
+  }
   }
 </script>
