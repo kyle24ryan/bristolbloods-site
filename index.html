@@ -124,6 +124,21 @@
       100% { transform: translateX(0) }
     }
   }
+
+  /* Toast popup */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #222; color: #fff; padding: 16px 20px;
+    border: 1px solid #444; border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    z-index: 9999; max-width: 90vw; text-align: center;
+  }
+  .toast-msg { margin-bottom: 12px; }
+  .toast-btn {
+    background: #e11; color:#fff; border:none; border-radius:6px;
+    padding: 6px 14px; font-weight:700; cursor:pointer;
+  }
+  .toast-btn:hover { background:#c00; }
 </style>
 
 <div class="wrap">
@@ -156,10 +171,99 @@
 
 <script>
   const input = document.getElementById('name');
-  document.getElementById('go').onclick = () => {
-    const name = (input.value || "").trim();
-    if (!name) { input.focus(); return; }
-    location.href = `/reveal/?name=${encodeURIComponent(name)}`;
+  const goBtn = document.getElementById('go');
+  const errEl = document.getElementById('nameError');
+
+  // Known league names (normalize for comparison)
+  const LEAGUE_NAMES = [
+    "kyle","amy","james","jared","kristyn","chino","justin","erica","mike",
+    "chris","tom","thomas","ovidiu","michael","aimee","trav","travis","tommy","ovi"
+  ];
+
+  // Special roast map
+  const ROASTS = {
+    "chris": "Who the fuck is Chris?",
+    "tom": "Didn't you mean fucking Tommy?",
+    "thomas": "Didn't you mean fucking Tommy?",
+    "ovidiu": "Get that du outta here it's Ovi!",
+    "michael": "What is this catholic school? It's plain old Mike",
+    "aimee": "We only accept the Asian spelling of this name.",
+    "trav": "Spell the name out asshole!",
   };
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('go').click(); });
+
+  // Toast handling for "soft" warnings
+  function showToast(msg, onDismiss) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+      <div class="toast-msg">${msg}</div>
+      <button class="toast-btn">OK</button>
+    `;
+    document.body.appendChild(toast);
+    document.querySelector('.toast-btn').onclick = () => {
+      toast.remove();
+      if (onDismiss) onDismiss();
+    };
+  }
+
+  // Validation + roast check
+  function validateName(raw) {
+    const name = (raw || "").trim();
+    if (!name) return { ok:false, msg:"Don't know your own fucking name?" };
+    if (name.length < 2) return { ok:false, msg:"Name must be at least 2 characters." };
+    if (name.length > 20) return { ok:false, msg:"Name must be 20 characters or fewer." };
+
+    const slug = name.toLowerCase();
+
+    // Roast cases
+    if (ROASTS[slug]) return { ok:false, msg:ROASTS[slug] };
+
+    // Toast warning cases (continue flow after dismiss)
+    if (slug === "james") {
+      showToast("Didn't you mean Jim or Jimbo? Just kidding CHAMP!", () => {
+        proceed(name);
+      });
+      return { ok:false, msg:null }; // block normal flow until toast closes
+    }
+    if (slug === "jared") {
+      showToast("Now I know you're old, no longer JROD. SMH You will always be JROD to me pal.", () => {
+        proceed(name);
+      });
+      return { ok:false, msg:null };
+    }
+
+    // Catch-all: not in league list
+    if (!LEAGUE_NAMES.includes(slug)) {
+      return { ok:false, msg:"Who the fuck are you? Get outta here" };
+    }
+
+    return { ok:true, name };
+  }
+
+  function showError(msg) {
+    if (!msg) return;
+    input.classList.add('error');
+    errEl.textContent = msg;
+  }
+  function clearError() {
+    input.classList.remove('error');
+    errEl.textContent = "";
+  }
+
+  function proceed(validName) {
+    clearError();
+    location.href = `/reveal/?name=${encodeURIComponent(validName)}`;
+  }
+
+  function submit() {
+    const v = validateName(input.value);
+    if (!v.ok) {
+      if (v.msg) showError(v.msg); // toast cases skip this
+      return;
+    }
+    proceed(v.name);
+  }
+
+  goBtn.addEventListener('click', submit);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
 </script>
