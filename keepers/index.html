@@ -16,43 +16,44 @@
     display:grid; place-items:center; padding:24px 16px;
   }
   .wrap{
-    width:100%; min-height:100dvh;
-    display:grid; align-content:center; justify-items:center; gap:14px; text-align:center;
+    width:100%; 
+    min-height:100dvh;
+    display:grid; 
+    align-content:center; 
+    justify-items:center;   /* ensures logo + panel are horizontally centered */
+    gap:14px; 
+    text-align:center;
   }
-
-  /* Logo: wide on desktop, stacked on mobile */
+  
+  /* Logo */
   .logo { margin-bottom: 6px; }
-  .logo picture{ display:block }
-  .logo img{ width:100%; height:auto; display:block; }
-  /* Size the logo container responsively */
-  .logo {
-    width:min(92vw, 760px);           /* desktop cap */
-  }
+  .logo picture { display:block }
+  .logo img { width:100%; height:auto; display:block }
+  
+  /* Larger but still responsive */
+  .logo { width:min(80vw, 640px); }      /* desktop/tablet cap for wide logo */
   @media (max-width:560px){
-    .logo { width:min(92vw, 350px); } /* stacked is taller; keep width modest */
+    .logo { width:min(80vw, 320px); }    /* stacked logo slightly bigger */
   }
 
-  /* Card-ish container for the coming-soon message */
+  /* Card-ish container */
   .panel{
-    width:min(92vw, 760px);
+    width:min(92vw, 560px);           /* narrower so it sits under the logo nicely */
     background:#0b0b0b; border:1px solid #141414; border-radius:18px;
     padding:22px; box-shadow:0 10px 40px rgba(0,0,0,.35);
   }
 
   h1{
-    margin:10px 0 6px;
+    margin:6px 0 8px;
     font-size:clamp(22px, 4.6vw, 34px);
     letter-spacing:.2px;
   }
-  .sub{ color:#bdbdbd; margin:0 0 16px }
-
-  .badge{
-    display:inline-block; font-weight:800; letter-spacing:.3px;
-    color:#fff; background:#151515; border:1px solid #2a2a2a;
-    padding:8px 12px; border-radius:12px; margin-bottom:8px;
+  .sub{
+    color:#bdbdbd; margin:0 0 14px;
+    max-width:36ch;                   /* keep text measure comfy */
+    margin-left:auto; margin-right:auto;
   }
 
-  /* Buttons */
   .row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:14px }
   .btn{
     --bg:#151515; --bd:#2a2a2a; --fg:#fff;
@@ -80,8 +81,7 @@
   <div class="panel">
     <h1>Coming Soon</h1>
     <p class="sub">
-      Your future regrets are being formatted.
-      Keeper reveal coming soon.
+      Your future regrets are being formatted. Keeper reveal coming soon.
     </p>
 
     <div class="row">
