@@ -25,11 +25,19 @@
   @media (max-width:560px){ .stack{ width:min(92vw, var(--stack-mobile)); } }
 
   /* Logo */
-  .logo{ margin-bottom:6px }
-  .logo picture{ display:block }
-  .logo img{ width:80%; height:auto; display:block }
-  @media (max-width:500px){
-    .logo img{ content:url("/assets/logo-red-stacked.svg"); }
+  .logo {
+    margin-bottom: 4px;
+    max-width: 240px;   /* keep it modest on desktop */
+  }
+  .logo picture { display:block }
+  .logo img {
+    width:100%; height:auto; display:block;
+  }
+  @media (max-width:560px){
+    .logo {
+      max-width: 160px;   /* smaller on phones */
+    }
+    .logo img { content:url("/assets/logo-red-stacked.svg"); }
   }
 
   .sub{ color:#bdbdbd; font-weight:600; margin:0 0 6px }
@@ -93,7 +101,7 @@
   </div>
 
   <!-- Subtitle + Greeting -->
-  <div class="sub stack">Draft Reveal</div>
+  <div class="sub stack">Draft Order Reveal</div>
   <div id="greet" class="greet stack"></div>
 
   <!-- Reveal control -->
