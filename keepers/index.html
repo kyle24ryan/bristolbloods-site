@@ -25,15 +25,24 @@
     text-align:center;
   }
   
-  /* Logo */
-  .logo { margin-bottom: 6px; }
-  .logo picture { display:block }
-  .logo img { width:100%; height:auto; display:block }
+  /* Center and scale logo properly */
+  .logo {
+    margin: 0 auto 8px;       /* centers horizontally, adds bottom spacing */
+    display: flex;
+    justify-content: center;
+  }
   
-  /* Larger but still responsive */
-  .logo { width:min(80vw, 640px); }      /* desktop/tablet cap for wide logo */
-  @media (max-width:560px){
-    .logo { width:min(80vw, 320px); }    /* stacked logo slightly bigger */
+  .logo img {
+    display: block;
+    height: auto;
+    max-width: 600px;         /* desktop cap */
+    width: 100%;
+  }
+  
+  @media (max-width: 560px) {
+    .logo img {
+      max-width: 340px;       /* stacked version cap */
+    }
   }
 
   /* Card-ish container */
