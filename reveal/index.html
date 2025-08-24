@@ -132,36 +132,38 @@
 <script>
   const API = "https://api.bristolbloods.com";
 
-  // --- helpers ---
-  const qs = new URLSearchParams(location.search);
-  const rawName = (qs.get("name") || "").trim();
-  const name = rawName || "";
+  // --- DOM refs ---
+  const qs        = new URLSearchParams(location.search);
+  const rawName   = (qs.get("name") || "").trim();
+  const name      = rawName || "";
 
-  const greetEl  = document.getElementById('greet');
-  const btn      = document.getElementById('revealBtn');
-  const loading  = document.getElementById('loading');
+  const logo      = document.querySelector('.logo');
+  const greetEl   = document.getElementById('greet');
+  const btn       = document.getElementById('revealBtn');
+  const loading   = document.getElementById('loading');
   const loadingText = document.getElementById('loadingText');
-  const card     = document.getElementById('result');
-  const imgEl    = document.getElementById('cardImg');
-  const stamp    = document.getElementById('stamp');
-  const canon    = document.getElementById('canon');
+  const card      = document.getElementById('result');
+  const imgEl     = document.getElementById('cardImg');
+  const stamp     = document.getElementById('stamp');
+  const canon     = document.getElementById('canon');
 
-  // Title-case for display (handles spaces, hyphens, apostrophes)
+  // make image decode eagerly & async for faster paint
+  imgEl.decoding = "async";
+  imgEl.loading  = "eager";
+
+  // ---- Helpers ----
   function titleCaseName(raw) {
-    return (raw || "")
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)
-      .map(part =>
-        part.split(/([-'])/).map(seg =>
-          seg && /[a-z]/.test(seg[0]) ? seg[0].toUpperCase() + seg.slice(1) : seg
-        ).join("")
-      )
-      .join(" ");
+    return (raw || "").trim().toLowerCase().split(/\s+/).map(part =>
+      part.split(/([-'])/).map(seg =>
+        seg && /[a-z]/.test(seg[0]) ? seg[0].toUpperCase() + seg.slice(1) : seg
+      ).join("")
+    ).join(" ");
   }
   function normalizeSlug(n){ return (n||"").trim().toLowerCase().replace(/\s+/g,'-'); }
+  function show(el, yes){ el.style.display = yes ? "" : "none"; }
+  function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
 
-  // Person-specific greetings
+  // Person-specific greetings (kept from your version)
   const PERSONAL_GREETINGS = {
     "james":  "{name}, ready to run it back?",
     "erica":  "{name}, who are you splitting the pot with this year?",
@@ -171,8 +173,6 @@
     "tom":    "Stay the fuck away from my draft position, {name}!",
     "thomas": "Stay the fuck away from my draft position, {name}!",
   };
-
-  // Savage greetings (keeps your favorite)
   const SAVAGE_GREETINGS = [
     "Ready to embarrass yourself again, {name}?",
     "Welcome to your annual humiliation, {name}.",
@@ -185,24 +185,12 @@
 
   // Button blurbs (80% savage / 20% positive)
   const NEGATIVE_BUTTONS = [
-    "Reveal my fate",
-    "Spin the wheel of shame",
-    "Show me my doom",
-    "Draft me dirty",
-    "Let’s see the carnage",
-    "Unveil the humiliation",
-    "Deal me my pain",
-    "Destroy my hope",
-    "Tell me I’m fucked",
-    "Hand me the L",
-    "Kick me while I’m down",
-    "Serve me disappointment"
+    "Reveal my fate","Spin the wheel of shame","Show me my doom","Draft me dirty",
+    "Let’s see the carnage","Unveil the humiliation","Deal me my pain","Destroy my hope",
+    "Tell me I’m fucked","Hand me the L","Kick me while I’m down","Serve me disappointment"
   ];
   const POSITIVE_BUTTONS = [
-    "Crown me champ early",
-    "Let’s see my dynasty",
-    "Load up the trophy",
-    "Bless me with greatness"
+    "Crown me champ early","Let’s see my dynasty","Load up the trophy","Bless me with greatness"
   ];
 
   function pickGreeting(raw) {
@@ -212,44 +200,77 @@
                 SAVAGE_GREETINGS[Math.floor(Math.random() * SAVAGE_GREETINGS.length)];
     return tpl.replaceAll("{name}", display || "Stranger");
   }
-
   function pickButtonBlurb() {
-    // 20% chance positive, otherwise savage
-    if (Math.random() < 0.2) {
-      return POSITIVE_BUTTONS[Math.floor(Math.random() * POSITIVE_BUTTONS.length)];
-    } else {
-      return NEGATIVE_BUTTONS[Math.floor(Math.random() * NEGATIVE_BUTTONS.length)];
-    }
+    return Math.random() < 0.2
+      ? POSITIVE_BUTTONS[Math.floor(Math.random() * POSITIVE_BUTTONS.length)]
+      : NEGATIVE_BUTTONS[Math.floor(Math.random() * NEGATIVE_BUTTONS.length)];
   }
 
-  function show(el, yes){ el.style.display = yes ? "" : "none"; }
-  function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
+  async function fetchSlotFor(name) {
+    try {
+      const res = await fetch(`${API}/state`, { cache: "no-store" });
+      if (!res.ok) return null;
+      const rows = await res.json(); // [{name, slug, slot, imageUrl}]
+      const slug = normalizeSlug(name);
+      const me = rows.find(r => r.slug === slug);
+      return me?.slot ?? null;
+    } catch { return null; }
+  }
 
-  // --- init text ---
+  function slotMessage(slot, displayName) {
+    if (!slot) return "";
+    // Customize as you like:
+    if (slot === 1) return `Pick #1 — enjoy your “choice” and the pressure, ${displayName}. No excuses.`;
+    if (slot === 12) return `Pick #12 — snake double-tap, ${displayName}. Pray for miracles.`;
+    if (slot <= 3) return `Pick #${slot} — premium real estate, ${displayName}. Don’t blow it.`;
+    if (slot <= 6) return `Pick #${slot} — solid middle-upper. You’ll still find a way to tilt.`;
+    if (slot <= 9) return `Pick #${slot} — the Bermuda Triangle of drafts. Good luck, ${displayName}.`;
+    return `Pick #${slot} — late round life: heavy lifting ahead, ${displayName}.`;
+  }
+
+  // --- init greeting + button text
+  const displayName = titleCaseName(name);
   greetEl.textContent = pickGreeting(name);
   btn.textContent = pickButtonBlurb();
 
-  // If no name, send them back politely
+  // No name? Send back to home.
   if (!name) {
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
-    // ✅ CORS-proof: don't fetch the image; let <img> load it directly
     btn.onclick = () => {
+      // Start loading & hide logo
+      if (logo) logo.style.display = "none";
       btn.disabled = true;
       show(loading, true);
       loadingText.textContent = "Rolling the ball… painting your shame…";
       card.style.display = "none";
 
-      // Build API URL (cache-busted so repeat visits force the PNG load)
+      // Build the image URL and trigger a “fresh” load each time
       const revealUrl = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
 
-      // When the PNG finishes loading, reveal UI and show canonical URL
-      imgEl.onload = () => {
+      // Ensure onload/onerror for THIS reveal only
+      imgEl.onload = async () => {
+        // show canonical URL (R2)
         const slug = normalizeSlug(name);
         const canonUrl = `${API}/image/${slug}.png`;
         canon.href = canonUrl;
         canon.textContent = canonUrl;
+
+        // fetch the slot and roast/praise accordingly
+        const slot = await fetchSlotFor(name);
+        const msg  = slotMessage(slot, displayName);
+        if (msg) {
+          // Put the pick message under the greeting
+          // If you prefer replacing the greeting entirely, set greetEl.textContent = msg
+          const existing = document.getElementById('pickMsg');
+          if (existing) existing.remove();
+          const p = document.createElement('div');
+          p.id = 'pickMsg';
+          p.className = 'greet stack';
+          p.textContent = msg;
+          greetEl.insertAdjacentElement('afterend', p);
+        }
 
         setStamp();
         show(loading, false);
@@ -259,12 +280,23 @@
 
       imgEl.onerror = () => {
         show(loading, false);
-        alert(`Could not load card for "${name}". Try again.`);
+        alert(`Could not load card for "${displayName}". Try again.`);
         btn.disabled = false;
+        if (logo) logo.style.display = ""; // re-show logo on error
       };
 
-      // Kick off the load by pointing the <img> at the API
+      // Important: clear previous src first to force a new load event path
+      imgEl.src = "";
+      // Kick off the image load (no CORS needed for <img>)
       imgEl.src = revealUrl;
+
+      // Optional “slow” status nudge
+      const slowTimer = setTimeout(() => {
+        loadingText.textContent = "Still working… greatness (or disaster) takes time.";
+      }, 6000);
+      const clearTimers = () => clearTimeout(slowTimer);
+      imgEl.addEventListener('load', clearTimers, { once:true });
+      imgEl.addEventListener('error', clearTimers, { once:true });
     };
   }
 </script>
