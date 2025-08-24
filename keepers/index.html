@@ -16,12 +16,12 @@
     display:grid; place-items:center; padding:24px 16px;
   }
   .wrap{
-    width:100%; 
-    min-height:100dvh;
-    display:grid; 
-    align-content:center; 
-    justify-items:center;   /* ensures logo + panel are horizontally centered */
-    gap:14px; 
+    width:100%; min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;  /* vertical balance */
+    align-items:center;      /* horizontal center */
+    gap:14px;
     text-align:center;
   }
   
