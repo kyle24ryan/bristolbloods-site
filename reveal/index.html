@@ -66,10 +66,16 @@
   }
   
   .spinner {
-    width:18px; height:18px; border-radius:50%;
-    border:3px solid #333; border-top-color:#fff; animation: spin .8s linear infinite;
+    width:18px; 
+    height:18px; 
+    border-radius:50%;
+    border:3px solid #330;          /* dark red base ring */
+    border-top-color: var(--red);   /* bright red spinner */
+    animation: spin .8s linear infinite;
   }
-  @keyframes spin { to { transform: rotate(360deg) } }
+  @keyframes spin { 
+    to { transform: rotate(360deg) } 
+  }
 
   /* Image card */
   .card{
@@ -266,12 +272,22 @@
   function startLoading() {
     loading.style.display = "flex";
     loadingText.textContent = "Summoning your draft card…";
+  
     const steps = [
-      [5000,  "Still working… greatness (or disaster) takes time."],
-      [10000,  "AI is arguing with itself about how ugly you are."],
-      [20000, "Almost there. It’s carefully crafting your public humiliation."]
+      [3000,  "Still working… greatness (or disaster) takes time."],
+      [7000,  "AI is arguing with itself about how ugly this is."],
+      [12000, "Almost there. It’s carefully crafting your public humiliation."],
+      [20000, "Calm down, {name}, even Michelangelo took his time."],
+      [30000, "The pixels are unionized. They’re on a smoke break."],
+      [45000, "Almost halftime. Hope your patience lasts longer than your season."],
+      [60000, "Good news: it’s not frozen. Bad news: neither is your roster."],
+      [75000, "It’s painting every hair on your chin with Pixar precision."],
+      [90000, "Okay fine, it’s taking forever. But hey—so will your rebuild."],
     ];
-    _loadingTimers = steps.map(([ms, msg]) => setTimeout(() => (loadingText.textContent = msg), ms));
+  
+    _loadingTimers = steps.map(([ms, msg]) =>
+      setTimeout(() => (loadingText.textContent = msg.replace("{name}", titleCaseName(name))), ms)
+    );
   }
   
   function stopLoading() {
