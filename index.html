@@ -98,6 +98,32 @@
     .reveal{ width:min(92vw, var(--stack-mobile)); }
     .cta-row{ width:min(92vw, var(--stack-mobile)); grid-template-columns:repeat(3,1fr); }
   }
+
+  /* Error message */
+  .error {
+    min-height: 18px;            /* reserves space so layout doesn't jump */
+    color: #ff6b6b;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  
+  /* Input error state */
+  .input.error {
+    border-color: #ff6b6b !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, .2);
+  }
+  
+  /* Tiny shake on error (optional, tasteful) */
+  @media (prefers-reduced-motion: no-preference) {
+    .shake { animation: shake .18s ease-in-out 0s 1; }
+    @keyframes shake {
+      0% { transform: translateX(0) }
+      25% { transform: translateX(-3px) }
+      50% { transform: translateX(3px) }
+      75% { transform: translateX(-2px) }
+      100% { transform: translateX(0) }
+    }
+  }
 </style>
 
 <div class="wrap">
@@ -116,7 +142,8 @@
     <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
     <button id="go" class="btn">Reveal My Fate</button>
   </div>
-
+  <div id="nameError" class="error stack" role="alert" aria-live="polite"></div>
+  
   <!-- Row 2: three CTAs, single row -->
   <div class="cta-row stack">
     <a class="cta" href="/overview/">Draft Order</a>
