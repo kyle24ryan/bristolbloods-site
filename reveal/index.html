@@ -264,9 +264,9 @@
     loading.style.display = "flex";
     loadingText.textContent = "Summoning your draft card…";
     const steps = [
-      [3000,  "Still working… greatness (or disaster) takes time."],
-      [7000,  "AI is arguing with itself about how ugly this is."],
-      [12000, "Almost there. It’s carefully crafting your public humiliation."]
+      [5000,  "Still working… greatness (or disaster) takes time."],
+      [10000,  "AI is arguing with itself about how ugly you are."],
+      [20000, "Almost there. It’s carefully crafting your public humiliation."]
     ];
     _loadingTimers = steps.map(([ms, msg]) => setTimeout(() => (loadingText.textContent = msg), ms));
   }
