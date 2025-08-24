@@ -146,7 +146,7 @@
   const stamp    = document.getElementById('stamp');
   const canon    = document.getElementById('canon');
 
-  // Title-case for display
+  // Title-case for display (handles spaces, hyphens, apostrophes)
   function titleCaseName(raw) {
     return (raw || "")
       .trim()
@@ -172,7 +172,7 @@
     "thomas": "Stay the fuck away from my draft position, {name}!",
   };
 
-  // Savage greetings
+  // Savage greetings (keeps your favorite)
   const SAVAGE_GREETINGS = [
     "Ready to embarrass yourself again, {name}?",
     "Welcome to your annual humiliation, {name}.",
@@ -183,7 +183,7 @@
     "Brace yourself, {name}. The draft board is about to bully you."
   ];
 
-  // Button blurbs
+  // Button blurbs (80% savage / 20% positive)
   const NEGATIVE_BUTTONS = [
     "Reveal my fate",
     "Spin the wheel of shame",
@@ -223,40 +223,29 @@
   }
 
   function show(el, yes){ el.style.display = yes ? "" : "none"; }
-
-  function setStamp(){
-    const dt = new Date();
-    stamp.textContent = "Revealed " + dt.toLocaleString();
-  }
+  function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
 
   // --- init text ---
   greetEl.textContent = pickGreeting(name);
   btn.textContent = pickButtonBlurb();
 
   // If no name, send them back politely
-  if(!name){
+  if (!name) {
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
-    btn.onclick = async () => {
-      try {
-        btn.disabled = true;
-        show(loading, true);
-        loadingText.textContent = "Rolling the ball… painting your shame…";
+    // ✅ CORS-proof: don't fetch the image; let <img> load it directly
+    btn.onclick = () => {
+      btn.disabled = true;
+      show(loading, true);
+      loadingText.textContent = "Rolling the ball… painting your shame…";
+      card.style.display = "none";
 
-        const res = await fetch(`${API}/reveal?name=${encodeURIComponent(name)}`, {
-          method: "GET",
-          mode: "cors"
-        });
-        if(!res.ok){
-          const msg = await res.text().catch(()=>res.statusText);
-          throw new Error(`Reveal failed (${res.status}): ${msg}`);
-        }
+      // Build API URL (cache-busted so repeat visits force the PNG load)
+      const revealUrl = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
 
-        const blob = await res.blob();
-        const url  = URL.createObjectURL(blob);
-        imgEl.src = url;
-
+      // When the PNG finishes loading, reveal UI and show canonical URL
+      imgEl.onload = () => {
         const slug = normalizeSlug(name);
         const canonUrl = `${API}/image/${slug}.png`;
         canon.href = canonUrl;
@@ -264,13 +253,18 @@
 
         setStamp();
         show(loading, false);
-        show(card, true);
+        card.style.display = "";
         document.getElementById('controls').style.display = 'none';
-      } catch (err){
+      };
+
+      imgEl.onerror = () => {
         show(loading, false);
-        alert((err && err.message) ? err.message : "Something broke. Try again.");
+        alert(`Could not load card for "${name}". Try again.`);
         btn.disabled = false;
-      }
+      };
+
+      // Kick off the load by pointing the <img> at the API
+      imgEl.src = revealUrl;
     };
   }
 </script>
