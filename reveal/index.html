@@ -30,13 +30,9 @@
     max-width: 300px;   /* keep it modest on desktop */
   }
   .logo picture { display:block }
-  .logo img {
-    width:100%; height:auto; display:block;
-  }
+  .logo img { width:100%; height:auto; display:block; }
   @media (max-width:560px){
-    .logo {
-      max-width: 200px;   /* smaller on phones */
-    }
+    .logo { max-width: 200px; }   /* smaller on phones */
     .logo img { content:url("/assets/logo-red-stacked.svg"); }
   }
 
@@ -146,8 +142,9 @@
   const imgEl     = document.getElementById('cardImg');
   const stamp     = document.getElementById('stamp');
   const canon     = document.getElementById('canon');
+  const controls  = document.getElementById('controls');
 
-  // make image decode eagerly & async for faster paint
+  // image decode hints
   imgEl.decoding = "async";
   imgEl.loading  = "eager";
 
@@ -160,10 +157,9 @@
     ).join(" ");
   }
   function normalizeSlug(n){ return (n||"").trim().toLowerCase().replace(/\s+/g,'-'); }
-  function show(el, yes){ el.style.display = yes ? "" : "none"; }
   function setStamp(){ stamp.textContent = "Revealed " + new Date().toLocaleString(); }
 
-  // Person-specific greetings (kept from your version)
+  // Person-specific & savage greetings
   const PERSONAL_GREETINGS = {
     "james":  "{name}, ready to run it back?",
     "erica":  "{name}, who are you splitting the pot with this year?",
@@ -182,6 +178,13 @@
     "Let’s see how fast you tilt this year, {name}.",
     "Brace yourself, {name}. The draft board is about to bully you."
   ];
+  function pickGreeting(raw) {
+    const display = titleCaseName(raw);
+    const key = (raw || "").trim().toLowerCase();
+    const tpl = PERSONAL_GREETINGS[key] ||
+                SAVAGE_GREETINGS[Math.floor(Math.random() * SAVAGE_GREETINGS.length)];
+    return tpl.replaceAll("{name}", display || "Stranger");
+  }
 
   // Button blurbs (80% savage / 20% positive)
   const NEGATIVE_BUTTONS = [
@@ -192,14 +195,6 @@
   const POSITIVE_BUTTONS = [
     "Crown me champ early","Let’s see my dynasty","Load up the trophy","Bless me with greatness"
   ];
-
-  function pickGreeting(raw) {
-    const display = titleCaseName(raw);
-    const key = (raw || "").trim().toLowerCase();
-    const tpl = PERSONAL_GREETINGS[key] ||
-                SAVAGE_GREETINGS[Math.floor(Math.random() * SAVAGE_GREETINGS.length)];
-    return tpl.replaceAll("{name}", display || "Stranger");
-  }
   function pickButtonBlurb() {
     return Math.random() < 0.2
       ? POSITIVE_BUTTONS[Math.floor(Math.random() * POSITIVE_BUTTONS.length)]
@@ -216,7 +211,6 @@
       return me?.slot ?? null;
     } catch { return null; }
   }
-
   function critique(slot, displayName) {
     const n = displayName || "You";
     if (slot === 1)  return `${n}, pick #1 — enjoy it while it lasts. No excuses now.`;
@@ -228,15 +222,13 @@
     return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
   }
 
-  // --- init greeting + button text
+  // Initial UI state
   const displayName = titleCaseName(name);
-  greetEl.textContent = pickGreeting(name);
+  greetEl.textContent = pickGreeting(name);  // placeholder text
+  greetEl.hidden = true;                     // keep hidden until we have slot
   btn.textContent = pickButtonBlurb();
 
-  // NEW: keep greeting hidden until we have the slot roast
-  greetEl.hidden = true;
-
-  // -------- loading copy that escalates --------
+  // Loading text that escalates
   let _loadingTimers = [];
   function startLoading() {
     loading.style.display = "flex";
@@ -254,62 +246,52 @@
     _loadingTimers = [];
   }
 
-  // No name? Send back to home.
+  // No name? Send home.
   if (!name) {
     btn.textContent = "Go back and type your name";
     btn.onclick = () => { location.href = "/"; };
   } else {
-    const logoEl   = document.querySelector('.logo');
-    const controls = document.getElementById('controls');
-
     btn.onclick = () => {
       btn.disabled = true;
       startLoading();
 
-      if (logoEl) logoEl.style.display = 'none';
+      if (logo) logo.style.display = 'none';
       card.style.display = 'none';
       imgEl.hidden = true;
       greetEl.hidden = true;
 
-      // 1) Attach handlers FIRST (so we don't miss a cached load)
+      // Handlers FIRST so we don't miss a cached load
       imgEl.onload = async () => {
         stopLoading();
         imgEl.hidden = false;
-        card.style.display = "";          // show the card
+        card.style.display = "block";   // <-- critical: override CSS display:none
         controls.style.display = 'none';
         setStamp();
 
-        // Canonical persisted URL
         const slug = normalizeSlug(name);
         const canonUrl = `${API}/image/${slug}.png`;
         canon.href = canonUrl;
         canon.textContent = canonUrl;
 
-        // Slot-based roast/praise text
-        try {
-          const slot = await fetchSlotFor(name);
-          const displayName = titleCaseName(name);
-          greetEl.textContent = slot
-            ? critique(slot, displayName)
-            : "Revealed. If the pick sucks, blame latency.";
-        } catch {
-          greetEl.textContent = "Revealed. If the pick sucks, blame latency.";
-        }
-        greetEl.hidden = false;           // finally show greeting
+        const slot = await fetchSlotFor(name).catch(() => null);
+        greetEl.textContent = slot
+          ? critique(slot, displayName)
+          : "Revealed. If the pick sucks, blame latency.";
+        greetEl.hidden = false;
       };
 
       imgEl.onerror = () => {
         stopLoading();
         alert(`Could not load card for "${name}". Try again.`);
         btn.disabled = false;
-        if (logoEl) logoEl.style.display = '';
+        if (logo) logo.style.display = '';
       };
 
-      // 2) THEN set the src (cache-busted)
+      // Now trigger the load (cache-busted)
       imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
     };
 
-    // Autoplay only if a name exists
+    // Autoplay supported
     if (qs.get("autoplay") === "1") btn.click();
   }
 </script>
