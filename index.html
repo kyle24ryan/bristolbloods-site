@@ -7,142 +7,98 @@
 <style>
   :root{
     color-scheme: dark;
-    /* One width to rule them all */
-    --stack: 680px;          /* desktop/tablet max for logo + rows */
-    --stack-mobile: 360px;   /* phone max */
+    --stack: 680px;
+    --stack-mobile: 360px;
     --red: #ff3b3b;
   }
 
-  html, body { height: 100%; margin: 0; }
-  body{
-    background:#000; color:#fff;
-    font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  html, body { height: 100%; margin: 0; background:#000; color:#fff; font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
+
+  /* ===== Header (navbar only; no logo) ===== */
+  header {
+    padding:12px 20px 10px;
+    border-bottom:1px solid #151515;
+  }
+  nav { display:flex; align-items:center; gap:18px; justify-content:flex-end; }
+  nav a {
+    color:#cfcfcf; text-decoration:none; font-size:14px; padding:6px 2px;
+    border-bottom:2px solid transparent; transition:border-color .15s,color .15s;
+  }
+  nav a:hover { color:#fff; border-color:#ff3b3b; }
+  nav a[aria-current="page"] { color:#fff; border-color:#ff3b3b; }
+  @media (max-width:520px){ nav{ justify-content:center; } }
+
+  /* ===== Hero ===== */
+  .wrap{
+    width:100%;
+    min-height:calc(100dvh - 56px); /* minus header-ish */
     display:grid; place-items:center;
     padding: 24px 16px;
   }
+  .stack{ width:min(92vw, var(--stack)); text-align:center; }
 
-  /* Vertical stack stays centered */
-  .wrap{
-    width:100%;
-    min-height:100dvh;
-    display:grid;
-    align-content:center;
-    justify-items:center;
-    row-gap: 14px;
-    text-align:center;
-  }
-
-  /* Shared width for logo + rows */
-  .stack{ width:min(92vw, var(--stack)); }
-
-  /* Logo (wide by default; swaps to stacked on phones) */
-  .logo{ margin-bottom:8px }
+  .logo{ margin: 6vh auto 10px; }
   .logo picture{ display:block }
   .logo img{ width:100%; height:auto; display:block }
 
-  /* Subtitle (tighter to logo) */
-  .sub{ margin:0 0 10px; color:#bdbdbd; font-weight:600; letter-spacing:.2px }
+  .sub{ margin:0 0 18px; color:#bdbdbd; font-weight:700; letter-spacing:.2px; font-size:clamp(16px,2.2vw,22px); }
 
-  /* Reveal row: input + button as ONE element */
+  /* Reveal row: input + button fused */
   .reveal{
     width:100%;
-    display:flex;
-    align-items:stretch;
+    display:flex; align-items:stretch; justify-content:center;
+    margin: 6px auto 6px;
   }
   .input{
     box-sizing:border-box; flex:1 1 auto;
-    padding:14px 16px; border:1px solid #2a2a2a;
-    border-right:0;                      /* fuse with button */
-    border-radius:12px 0 0 12px;
-    background:#0f0f0f; color:#fff; outline:none;
+    padding:14px 16px; border:1px solid #2a2a2a; border-right:0;
+    border-radius:12px 0 0 12px; background:#0f0f0f; color:#fff; outline:none;
   }
   .input::placeholder{ color:#6b6b6b }
   .btn{
     box-sizing:border-box; flex:0 0 auto;
-    padding:14px 18px;
-    border:1px solid var(--red);         /* fuse with input */
-    border-left:0;
-    border-radius:0 12px 12px 0;
-    background:var(--red); color:#fff;
-    font-weight:800; cursor:pointer;
-    transition:filter .2s ease, transform .08s ease;
+    padding:14px 18px; border:1px solid var(--red); border-left:0;
+    border-radius:0 12px 12px 0; background:var(--red); color:#fff;
+    font-weight:800; cursor:pointer; transition:filter .2s ease, transform .08s ease;
   }
   .btn:hover{ filter:brightness(1.05) }
   .btn:active{ transform:scale(.98) }
 
-  /* 3-button row: SINGLE ROW, equal widths */
-  .cta-row{
-    width:100%;
-    display:grid; grid-template-columns:repeat(3, 1fr);
-    gap:12px;
-  }
-  .cta{
-    display:flex; align-items:center; justify-content:center;
-    padding:14px; border-radius:12px;
-    background:#151515; color:#fff;
-    border:1px solid #2a2a2a; text-decoration:none; font-weight:800;
-    transition:border-color .2s ease;
-  }
-  .cta:hover{ border-color:#3a3a3a }
+  .hint{ color:#8b8b8b; font-size:13px; margin-top:14px; }
 
-  .hint{ color:#8b8b8b; font-size:13px }
-
-  /* ---------- Mobile ---------- */
+  /* Mobile swaps to stacked logo asset */
   @media (max-width: 560px){
     .stack{ width:min(92vw, var(--stack-mobile)); }
-
-    /* switch to stacked logo asset */
-    .logo img{ content:url("/assets/logo-red-stacked.svg"); }
-
-    /* keep input + button as one row, no overflow */
     .reveal{ width:min(92vw, var(--stack-mobile)); }
-    .cta-row{ width:min(92vw, var(--stack-mobile)); grid-template-columns:repeat(3,1fr); }
+    .logo img{ content:url("/assets/logo-red-stacked.svg"); }
   }
 
-  /* Error message */
-  .error {
-    min-height: 18px;            /* reserves space so layout doesn't jump */
-    color: #ff6b6b;
-    font-size: 13px;
-    margin-top: 6px;
-  }
-  
-  /* Input error state */
-  .input.error {
-    border-color: #ff6b6b !important;
-    box-shadow: 0 0 0 3px rgba(255, 107, 107, .2);
-  }
-  
-  /* Tiny shake on error (optional, tasteful) */
+  /* Error + toast (unchanged) */
+  .error { min-height:18px; color:#ff6b6b; font-size:13px; margin-top:6px; }
+  .input.error { border-color:#ff6b6b !important; box-shadow:0 0 0 3px rgba(255,107,107,.2); }
   @media (prefers-reduced-motion: no-preference) {
     .shake { animation: shake .18s ease-in-out 0s 1; }
-    @keyframes shake {
-      0% { transform: translateX(0) }
-      25% { transform: translateX(-3px) }
-      50% { transform: translateX(3px) }
-      75% { transform: translateX(-2px) }
-      100% { transform: translateX(0) }
-    }
+    @keyframes shake { 0%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}100%{transform:translateX(0)} }
   }
-
-  /* Toast popup */
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: #222; color: #fff; padding: 16px 20px;
-    border: 1px solid #444; border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.5);
-    z-index: 9999; max-width: 90vw; text-align: center;
+    background:#222; color:#fff; padding:16px 20px; border:1px solid #444; border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5); z-index:9999; max-width:90vw; text-align:center;
   }
-  .toast-msg { margin-bottom: 12px; }
-  .toast-btn {
-    background: #e11; color:#fff; border:none; border-radius:6px;
-    padding: 6px 14px; font-weight:700; cursor:pointer;
-  }
+  .toast-msg { margin-bottom:12px; }
+  .toast-btn { background:#e11; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; }
   .toast-btn:hover { background:#c00; }
 </style>
 
+<header>
+  <nav>
+    <a href="/" aria-current="page">Home</a>
+    <a href="/keepers">Keepers</a>
+    <a href="/draft">Draft Order</a>
+  </nav>
+</header>
+
 <div class="wrap">
-  <!-- Logo -->
   <div class="logo stack">
     <picture>
       <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)">
@@ -152,20 +108,12 @@
 
   <div class="sub stack">Labor Day Massacre — 7:30pm EST</div>
 
-  <!-- Row 1: unified input + button -->
   <div class="reveal stack" id="revealRow">
     <input id="name" class="input" placeholder="Your first name" autocomplete="given-name" />
     <button id="go" class="btn">Reveal My Fate</button>
   </div>
-  <div id="nameError" class="error stack" role="alert" aria-live="polite"></div>
-  
-  <!-- Row 2: three CTAs, single row -->
-  <div class="cta-row stack">
-    <a class="cta" href="/overview/">Draft Order</a>
-    <a class="cta" href="/keepers/">Keepers</a>
-    <a class="cta" href="https://fantasy.espn.com/football/league?leagueId=636471" target="_blank" rel="noopener">League Home</a>
-  </div>
 
+  <div id="nameError" class="error stack" role="alert" aria-live="polite"></div>
   <div class="hint stack">Disclaimer: Draft is subject to change.</div>
 </div>
 
@@ -174,13 +122,11 @@
   const goBtn = document.getElementById('go');
   const errEl = document.getElementById('nameError');
 
-  // Known league names (normalize for comparison)
   const LEAGUE_NAMES = [
     "kyle","amy","james","jared","kristyn","chino","justin","erica","mike",
     "chris","tom","thomas","ovidiu","michael","aimee","trav","travis","tommy","ovi"
   ];
 
-  // Special roast map
   const ROASTS = {
     "chris": "Who the fuck is Chris?",
     "tom": "Didn't you mean fucking Tommy?",
@@ -191,7 +137,6 @@
     "trav": "Spell the name out asshole!",
   };
 
-  // Toast handling for "soft" warnings
   function showToast(msg, onDismiss) {
     const toast = document.createElement('div');
     toast.className = 'toast';
@@ -206,7 +151,6 @@
     };
   }
 
-  // Validation + roast check
   function validateName(raw) {
     const name = (raw || "").trim();
     if (!name) return { ok:false, msg:"Don't know your own fucking name?" };
@@ -215,24 +159,17 @@
 
     const slug = name.toLowerCase();
 
-    // Roast cases
     if (ROASTS[slug]) return { ok:false, msg:ROASTS[slug] };
 
-    // Toast warning cases (continue flow after dismiss)
     if (slug === "james") {
-      showToast("Didn't you mean Jim or Jimbo? Just kidding CHAMP!", () => {
-        proceed(name);
-      });
-      return { ok:false, msg:null }; // block normal flow until toast closes
+      showToast("Didn't you mean Jim or Jimbo? Just kidding CHAMP!", () => { proceed(name); });
+      return { ok:false, msg:null };
     }
     if (slug === "jared") {
-      showToast("Now I know you're old, no longer JROD. SMH You will always be JROD to me pal.", () => {
-        proceed(name);
-      });
+      showToast("Now I know you're old, no longer JROD. SMH You will always be JROD to me pal.", () => { proceed(name); });
       return { ok:false, msg:null };
     }
 
-    // Catch-all: not in league list
     if (!LEAGUE_NAMES.includes(slug)) {
       return { ok:false, msg:"Who the fuck are you? Get outta here" };
     }
@@ -242,8 +179,9 @@
 
   function showError(msg) {
     if (!msg) return;
-    input.classList.add('error');
+    input.classList.add('error','shake');
     errEl.textContent = msg;
+    setTimeout(()=>input.classList.remove('shake'), 220);
   }
   function clearError() {
     input.classList.remove('error');
