@@ -10,7 +10,8 @@
     --stack: 680px;
     --stack-mobile: 360px;
     --red: #ff3b3b;
-    --head: 0px; /* set dynamically */
+    --head: 0px;         /* already there */
+    --vh: 1svh;          /* NEW: fallback unit for small viewport height */
   }
 
   html, body { height: 100%; margin: 0; background:#000; color:#fff; font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
@@ -32,15 +33,20 @@
   /* ===== Hero ===== */
   .wrap{
     width:100%;
-    min-height: calc(100dvh - var(--head)); /* center in remaining viewport */
+    min-height: calc(var(--vh) * 100 - var(--head));  /* CHANGED */
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     padding: 24px 16px;
   }
   .stack{ width:min(92vw, var(--stack)); margin-inline:auto; text-align:center; }
-
-  .logo{ margin: 2vh auto 10px; }
   .logo picture{ display:block }
-  .logo img{ width:100%; height:auto; display:block }
+
+  .logo{ margin: 1.5vh auto 10px; }                    /* was 2vh */
+  .logo img{
+    width:100%; height:auto; display:block;
+    max-height: min(28svh, 260px);                     /* NEW: prevent oversizing on mobile */
+    object-fit: contain;
+  }
+
 
   .sub{ margin:0 0 18px; color:#bdbdbd; font-weight:700; letter-spacing:.2px; font-size:clamp(16px,2.2vw,22px); }
 
@@ -71,6 +77,7 @@
   @media (max-width: 560px){
     .stack{ width:min(92vw, var(--stack-mobile)); }
     .logo img{ content:url("/assets/logo-red-stacked.svg"); }
+    .sub{ font-size:clamp(14px, 2.6vw, 18px); }        /* nudge down a touch */
   }
 
   /* Error + toast (unchanged) */
@@ -118,15 +125,25 @@
 </div>
 
 <script>
-  // Keep hero perfectly centered beneath whatever header height is rendered
   function setHeaderVar() {
     const h = document.querySelector('header')?.offsetHeight || 0;
     document.documentElement.style.setProperty('--head', h + 'px');
   }
-  setHeaderVar();
-  addEventListener('resize', setHeaderVar);
-  addEventListener('orientationchange', setHeaderVar);
-  if (document.fonts) document.fonts.ready.then(setHeaderVar);
+
+  function setVhVar() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+
+  function syncLayout() {
+    setVhVar();
+    setHeaderVar();
+  }
+  
+  syncLayout();
+  addEventListener('resize', syncLayout, { passive: true });
+  addEventListener('orientationchange', syncLayout, { passive: true });
+  if (document.fonts) document.fonts.ready.then(syncLayout);
 
   const input = document.getElementById('name');
   const goBtn = document.getElementById('go');
