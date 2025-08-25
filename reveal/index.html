@@ -79,6 +79,12 @@
   .btn:active{ transform:scale(.98) }
   .btn[disabled]{ opacity:.6; cursor:not-allowed }
 
+  /* Outline variant for the regenerate button */
+  .btn.outline{
+    background:transparent; color:#fff; border:1px solid #3a3a3a;
+  }
+  .btn.outline:hover{ border-color:#5a5a5a; filter:none; }
+
   /* Loader */
   .loader {
     display:none; flex-direction: column; gap:12px;
@@ -92,7 +98,6 @@
   .card{
     width:100%;
     background:#0b0b0b; border:1px solid #141414; border-radius:14px;
-/*     padding:12px;  */
     display:none;
     margin-inline:auto;
   }
@@ -168,6 +173,8 @@
     <div class="meta">
       <span id="stamp"></span>
       <a id="canon" class="link" target="_blank" rel="noopener" style="display:none">Open image URL</a>
+      <!-- NEW: regenerate button -->
+      <button id="regenBtn" class="btn outline" style="display:none">Generate New Image</button>
     </div>
     <div class="nav">
       <a class="ghost" href="/overview/">
@@ -191,18 +198,16 @@
 
 <script>
   const API = "https://api.bristolbloods.com";
+  const REGEN_PARAM = 'redo'; // change if your backend expects a different flag
 
   // Header helpers
   const headerEl = document.getElementById('siteHeader');
   function showHeader() {
-    headerEl.style.display = 'flex';               // show
-    headerEl.style.display = 'flex';               // ensure flex layout
+    headerEl.style.display = 'flex';
     headerEl.removeAttribute('aria-hidden');
     const h = headerEl.offsetHeight || 0;
     document.documentElement.style.setProperty('--head', h + 'px');
     document.body.classList.add('has-header');
-
-    // after showing, wire nav (so sizes are final)
     setupRevealTab();
     setActiveNav();
   }
@@ -221,6 +226,7 @@
   const logo      = document.querySelector('.logo');
   const greetEl   = document.getElementById('greet');
   const btn       = document.getElementById('revealBtn');
+  const regenBtn  = document.getElementById('regenBtn');
   const loading   = document.getElementById('loading');
   const loadingText = document.getElementById('loadingText');
   const card      = document.getElementById('result');
@@ -264,6 +270,7 @@
       ['','navHome'],
       ['/keepers','navKeep'],
       ['/draft','navDraft'],
+      ['/overview','navDraft'],
     ]);
     let id = map.get(path) || null;
     if (path.startsWith('/reveal')) id = 'navReveal';
@@ -335,21 +342,11 @@
     return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
   }
 
-  // --- Initial UI state
-  const displayName = titleCaseName(name);
-  if (name) {
-    document.getElementById('greet').textContent = pickGreeting(name);
-    document.getElementById('greet').hidden = false;
-  } else {
-    document.getElementById('greet').hidden = true;
-  }
-  document.getElementById('revealBtn').textContent = pickButtonBlurb();
-
-  // Loading text escalator
+  // ---- Loader helpers (existing) ----
   let _loadingTimers = [];
-  function startLoading() {
+  function startLoading(message) {
     loading.style.display = "flex";
-    loadingText.textContent = "Summoning your draft card…";
+    loadingText.textContent = message || "Summoning your draft card…";
     const steps = [
       [3000,  "Still working… greatness (or disaster) takes time."],
       [7000,  "AI is arguing with itself about how ugly you are."],
@@ -371,54 +368,106 @@
     _loadingTimers = [];
   }
 
-  // No name? Send home
-  if (!name) {
-    document.getElementById('revealBtn').textContent = "Go back and type your name";
-    document.getElementById('revealBtn').onclick = () => { location.href = "/"; };
+  // --- Initial UI state
+  const displayName = titleCaseName(name);
+  if (name) {
+    greetEl.textContent = pickGreeting(name);
+    greetEl.hidden = false;
   } else {
-    document.getElementById('revealBtn').onclick = () => {
-      document.getElementById('revealBtn').disabled = true;
-      controls.style.display = 'none';
-      loading.style.display = 'flex';
-      startLoading();
+    greetEl.hidden = true;
+  }
+  btn.textContent = pickButtonBlurb();
 
-      if (logo) logo.style.display = '';
-      if (subtitle) subtitle.style.display = '';
-      card.style.display = 'none';
-      imgEl.hidden = true;
-      greetEl.hidden = true;
+  // ---- Shared reveal function (first reveal and regenerations) ----
+  let firstRevealDone = false;
 
-      imgEl.onload = async () => {
-        stopLoading();
-        imgEl.hidden = false;
-        card.style.display = "block";
+  function buildRevealURL(force=false){
+    const u = new URL(`${API}/reveal`);
+    u.searchParams.set('name', name);
+    if (force) u.searchParams.set(REGEN_PARAM, '1'); // server should ignore slot
+    u.searchParams.set('cb', Date.now());            // cache-bust
+    return u.toString();
+  }
 
-        // Hide logo/subtitle so the image card is the focus
+  function kickLoad(force=false){
+    startLoading(force ? "Rolling a fresh poster for you…" : "Summoning your draft card…");
+    imgEl.hidden = true;
+    card.style.display = 'none';
+    imgEl.onload = async () => {
+      stopLoading();
+      imgEl.hidden = false;
+      card.style.display = "block";
+
+      // First time only: hide splash logo/subtitle and show navbar
+      if (!firstRevealDone) {
         if (logo) logo.style.display = 'none';
         if (subtitle) subtitle.style.display = 'none';
-
-        // Show the navbar (with logo) and adjust layout; wire its links/active state
         showHeader();
+      }
 
-        const { slot, revealedAt } = await fetchSlotAndTime(name);
-        setStamp(revealedAt);
-        const displayName = titleCaseName(name);
-        greetEl.textContent = slot
-          ? critique(slot, displayName)
-          : "Revealed. If the pick sucks, blame latency.";
-        greetEl.hidden = false;
-      };
+      const { slot, revealedAt } = await fetchSlotAndTime(name);
+      setStamp(revealedAt);
+      greetEl.textContent = slot
+        ? critique(slot, displayName)
+        : "Revealed. If the pick sucks, blame latency.";
+      greetEl.hidden = false;
 
-      imgEl.onerror = () => {
-        stopLoading();
-        alert(`Could not load card for "${name}". Try again.`);
-        document.getElementById('revealBtn').disabled = false;
-        if (logo) logo.style.display = '';
-      };
+      // Show & enable regenerate after a successful image
+      regenBtn.style.display = '';
+      regenBtn.disabled = false;
 
-      imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
+      firstRevealDone = true;
     };
+    imgEl.onerror = () => {
+      stopLoading();
+      alert("Could not load a poster. Try again.");
+      regenBtn.disabled = false;
+      if (!firstRevealDone) btn.disabled = false;
+    };
+    imgEl.src = buildRevealURL(force);
+  }
 
-    if (qs.get("autoplay") === "1") document.getElementById('revealBtn').click();
+  // No name? Send home
+  if (!name) {
+    btn.textContent = "Go back and type your name";
+    btn.onclick = () => { location.href = "/"; };
+  } else {
+    btn.onclick = () => {
+      btn.disabled = true;
+      controls.style.display = 'none';   // hide the initial big button row
+      kickLoad(false);
+    };
+    if (qs.get("autoplay") === "1") btn.click();
+  }
+
+  // Regenerate handler — does NOT affect slot
+  regenBtn.addEventListener('click', () => {
+    regenBtn.disabled = true;
+    kickLoad(true);
+  });
+
+  // --- Navbar helpers after header shows ---
+  function setupRevealTab(){
+    const a = document.getElementById('navReveal');
+    if (!a) return;
+    if (name) {
+      a.href = `/reveal/?name=${encodeURIComponent(name)}`;
+      a.hidden = false;
+    } else if (location.pathname.startsWith('/reveal')) {
+      a.hidden = false;
+    }
+  }
+  function setActiveNav(){
+    const path = location.pathname.replace(/\/+$/,'');
+    const map = new Map([
+      ['','navHome'],
+      ['/keepers','navKeep'],
+      ['/draft','navDraft'],
+      ['/overview','navDraft'],
+    ]);
+    let id = map.get(path) || null;
+    if (path.startsWith('/reveal')) id = 'navReveal';
+    document.querySelectorAll('header nav a[aria-current]').forEach(a => a.removeAttribute('aria-current'));
+    if (id) document.getElementById(id)?.setAttribute('aria-current','page');
   }
 </script>
