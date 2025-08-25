@@ -16,30 +16,37 @@
   body{
     background:#000; color:#fff;
     font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    display:grid; place-items:center; padding:24px 16px;
+    display:block;           /* let the page flow; we handle centering below */
+    padding:24px 16px;
   }
+  body.has-header{ padding-top: calc(var(--head) + 8px); } /* make room once header shows */
 
-  /* Header (same nav as other pages), hidden until reveal */
+  /* ===== Header (matches other pages) ===== */
   header {
     display:none; /* shown after image loads */
     position:fixed; top:0; left:0; right:0; z-index:10;
     padding:12px 20px 10px;
     border-bottom:1px solid #151515;
-    background:#000;  /* solid so it looks consistent over content */
+    background:#000;
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
   }
-  nav { display:flex; align-items:center; gap:18px; justify-content:flex-end; }
+  .brand { display:flex; align-items:center; }
+  .brand img { height: clamp(28px, 5vw, 44px); width:auto; display:block; }
+  nav { display:flex; align-items:center; gap:18px; }
   nav a {
     color:#cfcfcf; text-decoration:none; font-size:14px; padding:6px 2px;
     border-bottom:2px solid transparent; transition:border-color .15s,color .15s;
   }
   nav a:hover { color:#fff; border-color:#ff3b3b; }
   nav a[aria-current="page"] { color:#fff; border-color:#ff3b3b; }
-  @media (max-width:520px){ nav{ justify-content:center; } }
+  @media (max-width:520px){ header{ justify-content:center; } .brand{ display:none } }
 
+  /* ===== Layout ===== */
   .wrap{
     width:100%;
-    min-height: calc(100dvh - var(--head)); /* stay centered even when header appears */
-    display:grid; align-content:center; justify-items:center; row-gap:14px; text-align:center;
+    min-height: calc(100dvh - var(--head) - 8px);  /* stays centered even after header shows */
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center;
   }
   .stack{ width:min(92vw, var(--stack)); margin-inline:auto; }
   @media (max-width:560px){ .stack{ width:min(92vw, var(--stack-mobile)); } }
@@ -74,27 +81,29 @@
 
   /* Loader */
   .loader {
-    display:none;
-    flex-direction: column;
-    gap:12px;
-    align-items:center;
-    justify-content:center;
-    color:#aaa;
+    display:none; flex-direction: column; gap:12px;
+    align-items:center; justify-content:center; color:#aaa;
   }
-  .spinner {
-    width:18px; height:18px; border-radius:50%;
-    border:3px solid #330; border-top-color: var(--red);
-    animation: spin .8s linear infinite;
-  }
+  .spinner { width:18px; height:18px; border-radius:50%;
+    border:3px solid #330; border-top-color: var(--red); animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg) } }
 
   /* Image card */
   .card{
     width:100%;
     background:#0b0b0b; border:1px solid #141414; border-radius:14px;
-    padding:12px; display:none;
+    padding:12px; display:none; margin-inline:auto;
   }
-  .card img{ width:100%; height:auto; display:block; border-radius:10px; background:#000 }
+  /* Keep the image centered and constrained on web & mobile */
+  .media { display:flex; align-items:center; justify-content:center; }
+  .card img{
+    display:block;
+    width:auto; height:auto; max-width:100%;
+    max-height: min(78vh, 1200px);     /* <-- limit height so it doesn't dominate on web */
+    border-radius:10px; background:#000;
+    object-fit:contain;
+    margin-inline:auto;
+  }
   .meta{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;
     margin-top:10px; color:#999; font-size:13px;
@@ -112,10 +121,14 @@
     border:1px solid #2a2a2a; text-decoration:none; font-weight:800;
   }
   .ghost:hover{ border-color:#3a3a3a }
+
+  /* Hide the old ghost buttons once the real navbar is visible */
+  body.has-header .nav { display:none; }
 </style>
 
-<!-- Navbar (hidden until reveal) -->
-<header id="siteHeader">
+<!-- Navbar (appears after reveal) -->
+<header id="siteHeader" aria-hidden="true">
+  <div class="brand"><img src="/assets/logo-red-wide.svg" alt="Bristol Bloods" /></div>
   <nav>
     <a href="/">Home</a>
     <a href="/keepers">Keepers</a>
@@ -149,7 +162,9 @@
 
   <!-- Image result -->
   <div id="result" class="card stack">
-    <img id="cardImg" alt="Draft reveal card" />
+    <div class="media">
+      <img id="cardImg" alt="Draft reveal card" />
+    </div>
     <div class="meta">
       <span id="stamp"></span>
       <a id="canon" class="link" target="_blank" rel="noopener" style="display:none">Open image URL</a>
@@ -177,12 +192,21 @@
 <script>
   const API = "https://api.bristolbloods.com";
 
-  // Header height -> keep content centered when header appears
+  // Header helpers
   const headerEl = document.getElementById('siteHeader');
-  function syncHead() {
+  function showHeader() {
+    headerEl.style.display = 'flex';
+    headerEl.removeAttribute('aria-hidden');
     const h = headerEl.offsetHeight || 0;
     document.documentElement.style.setProperty('--head', h + 'px');
+    document.body.classList.add('has-header');
   }
+  addEventListener('resize', () => {
+    if (headerEl.style.display !== 'none') {
+      const h = headerEl.offsetHeight || 0;
+      document.documentElement.style.setProperty('--head', h + 'px');
+    }
+  });
 
   // --- DOM refs ---
   const qs        = new URLSearchParams(location.search);
@@ -285,14 +309,14 @@
   // --- Initial UI state
   const displayName = titleCaseName(name);
   if (name) {
-    greetEl.textContent = pickGreeting(name);
-    greetEl.hidden = false;
+    document.getElementById('greet').textContent = pickGreeting(name);
+    document.getElementById('greet').hidden = false;
   } else {
-    greetEl.hidden = true;
+    document.getElementById('greet').hidden = true;
   }
   document.getElementById('revealBtn').textContent = pickButtonBlurb();
 
-  // Loading text
+  // Loading text escalator
   let _loadingTimers = [];
   function startLoading() {
     loading.style.display = "flex";
@@ -318,6 +342,7 @@
     _loadingTimers = [];
   }
 
+  // No name? Send home
   if (!name) {
     document.getElementById('revealBtn').textContent = "Go back and type your name";
     document.getElementById('revealBtn').onclick = () => { location.href = "/"; };
@@ -343,9 +368,8 @@
         if (logo) logo.style.display = 'none';
         if (subtitle) subtitle.style.display = 'none';
 
-        // SHOW NAVBAR NOW
-        headerEl.style.display = 'block';
-        syncHead();
+        // Show the navbar (with logo) and adjust layout
+        showHeader();
 
         const { slot, revealedAt } = await fetchSlotAndTime(name);
         setStamp(revealedAt);
@@ -368,9 +392,4 @@
 
     if (qs.get("autoplay") === "1") document.getElementById('revealBtn').click();
   }
-
-  // keep layout correct on resize
-  addEventListener('resize', syncHead);
-  addEventListener('orientationchange', syncHead);
-  if (document.fonts) document.fonts.ready.then(syncHead);
 </script>
