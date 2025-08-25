@@ -10,7 +10,7 @@
     --stack: 680px;
     --stack-mobile: 360px;
     --red: #ff3b3b;
-    --head: 0px; 
+    --head: 0px; /* set dynamically */
   }
 
   html, body { height: 100%; margin: 0; background:#000; color:#fff; font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
@@ -32,23 +32,23 @@
   /* ===== Hero ===== */
   .wrap{
     width:100%;
-    min-height: calc(100dvh - var(--head));
-    display:grid;
-    place-items:center;
+    min-height: calc(100dvh - var(--head)); /* center in remaining viewport */
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
     padding: 24px 16px;
   }
   .stack{ width:min(92vw, var(--stack)); margin-inline:auto; text-align:center; }
 
-  .logo{ margin: 2vh auto 10px; }  .logo picture{ display:block }
+  .logo{ margin: 2vh auto 10px; }
+  .logo picture{ display:block }
   .logo img{ width:100%; height:auto; display:block }
 
   .sub{ margin:0 0 18px; color:#bdbdbd; font-weight:700; letter-spacing:.2px; font-size:clamp(16px,2.2vw,22px); }
 
   /* Reveal row: input + button fused */
   .reveal{
-    width:100%;
     display:flex; align-items:stretch; justify-content:center;
     margin: 6px auto 6px;
+    /* no width here so .stack width applies */
   }
   .input{
     box-sizing:border-box; flex:1 1 auto;
@@ -67,10 +67,9 @@
 
   .hint{ color:#8b8b8b; font-size:13px; margin-top:14px; }
 
-  /* Mobile swaps to stacked logo asset */
+  /* Mobile swaps to stacked logo asset + narrower stack */
   @media (max-width: 560px){
     .stack{ width:min(92vw, var(--stack-mobile)); }
-    .reveal{ width:min(92vw, var(--stack-mobile)); }
     .logo img{ content:url("/assets/logo-red-stacked.svg"); }
   }
 
@@ -95,7 +94,7 @@
   <nav>
     <a href="/" aria-current="page">Home</a>
     <a href="/keepers">Keepers</a>
-    <a href="/overview">Draft Order</a>
+    <a href="/draft">Draft Order</a>
   </nav>
 </header>
 
@@ -119,6 +118,16 @@
 </div>
 
 <script>
+  // Keep hero perfectly centered beneath whatever header height is rendered
+  function setHeaderVar() {
+    const h = document.querySelector('header')?.offsetHeight || 0;
+    document.documentElement.style.setProperty('--head', h + 'px');
+  }
+  setHeaderVar();
+  addEventListener('resize', setHeaderVar);
+  addEventListener('orientationchange', setHeaderVar);
+  if (document.fonts) document.fonts.ready.then(setHeaderVar);
+
   const input = document.getElementById('name');
   const goBtn = document.getElementById('go');
   const errEl = document.getElementById('nameError');
