@@ -16,19 +16,19 @@
   body{
     background:#000; color:#fff;
     font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    display:block;           /* let the page flow; we handle centering below */
+    display:block;
     padding:24px 16px;
   }
-  body.has-header{ padding-top: calc(var(--head) + 8px); } /* make room once header shows */
+  body.has-header{ padding-top: calc(var(--head) + 8px); }
 
   /* ===== Header (matches other pages) ===== */
   header {
-    display:none; /* shown after image loads */
+    display:none;                 /* start hidden; shown via showHeader() */
     position:fixed; top:0; left:0; right:0; z-index:10;
     padding:12px 20px 10px;
     border-bottom:1px solid #151515;
     background:#000;
-    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    align-items:center; justify-content:space-between; gap:14px; /* flex set in JS */
   }
   .brand { display:flex; align-items:center; }
   .brand img { height: clamp(28px, 5vw, 44px); width:auto; display:block; }
@@ -44,7 +44,7 @@
   /* ===== Layout ===== */
   .wrap{
     width:100%;
-    min-height: calc(100dvh - var(--head) - 8px);  /* stays centered even after header shows */
+    min-height: calc(100dvh - var(--head) - 8px);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:14px; text-align:center;
   }
@@ -94,15 +94,12 @@
     background:#0b0b0b; border:1px solid #141414; border-radius:14px;
     padding:12px; display:none; margin-inline:auto;
   }
-  /* Keep the image centered and constrained on web & mobile */
   .media { display:flex; align-items:center; justify-content:center; }
   .card img{
     display:block;
     width:auto; height:auto; max-width:100%;
-    max-height: min(78vh, 1200px);     /* <-- limit height so it doesn't dominate on web */
-    border-radius:10px; background:#000;
-    object-fit:contain;
-    margin-inline:auto;
+    max-height: min(78vh, 1200px);
+    border-radius:10px; background:#000; object-fit:contain; margin-inline:auto;
   }
   .meta{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;
@@ -130,10 +127,10 @@
 <header id="siteHeader" aria-hidden="true">
   <div class="brand"><img src="/assets/logo-red-wide.svg" alt="Bristol Bloods" /></div>
   <nav>
-    <a href="/">Home</a>
-    <a href="/keepers">Keepers</a>
-    <a href="/draft">Draft Order</a>
-    <a href="/reveal/?name={name}" aria-current="page">Reveal Pick</a>
+    <a id="navHome"   href="/">Home</a>
+    <a id="navKeep"   href="/keepers">Keepers</a>
+    <a id="navDraft"  href="/draft">Draft Order</a>
+    <a id="navReveal" href="/reveal/" hidden>Reveal Pick</a>
   </nav>
 </header>
 
@@ -196,11 +193,16 @@
   // Header helpers
   const headerEl = document.getElementById('siteHeader');
   function showHeader() {
-    headerEl.style.display = 'flex';
+    headerEl.style.display = 'flex';               // show
+    headerEl.style.display = 'flex';               // ensure flex layout
     headerEl.removeAttribute('aria-hidden');
     const h = headerEl.offsetHeight || 0;
     document.documentElement.style.setProperty('--head', h + 'px');
     document.body.classList.add('has-header');
+
+    // after showing, wire nav (so sizes are final)
+    setupRevealTab();
+    setActiveNav();
   }
   addEventListener('resize', () => {
     if (headerEl.style.display !== 'none') {
@@ -241,6 +243,30 @@
   function setStamp(iso) {
     const dt = iso ? new Date(iso) : new Date();
     stamp.textContent = "Revealed " + dt.toLocaleString();
+  }
+
+  // Nav: reveal link + active tab
+  function setupRevealTab(){
+    const a = document.getElementById('navReveal');
+    if (!a) return;
+    if (name) {
+      a.href = `/reveal/?name=${encodeURIComponent(name)}`;
+      a.hidden = false;
+    } else if (location.pathname.startsWith('/reveal')) {
+      a.hidden = false;
+    }
+  }
+  function setActiveNav(){
+    const path = location.pathname.replace(/\/+$/,'');
+    const map = new Map([
+      ['','navHome'],
+      ['/keepers','navKeep'],
+      ['/draft','navDraft'],
+    ]);
+    let id = map.get(path) || null;
+    if (path.startsWith('/reveal')) id = 'navReveal';
+    document.querySelectorAll('header nav a[aria-current]').forEach(a => a.removeAttribute('aria-current'));
+    if (id) document.getElementById(id)?.setAttribute('aria-current','page');
   }
 
   const PERSONAL_GREETINGS = {
@@ -369,7 +395,7 @@
         if (logo) logo.style.display = 'none';
         if (subtitle) subtitle.style.display = 'none';
 
-        // Show the navbar (with logo) and adjust layout
+        // Show the navbar (with logo) and adjust layout; wire its links/active state
         showHeader();
 
         const { slot, revealedAt } = await fetchSlotAndTime(name);
