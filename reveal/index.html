@@ -123,6 +123,22 @@
 
   /* Hide the old ghost buttons once the real navbar is visible */
   body.has-header .nav { display:none; }
+
+  .footer {
+    position: fixed; 
+    right: 12px;
+    bottom: 12px;
+    z-index: 100;
+    opacity: 0.65;          /* subtle, not overpowering */
+    transition: opacity 0.2s ease;
+  }
+  .footer:hover {
+    opacity: 1;             /* brighten on hover */
+  }
+  .footer img {
+    height: 26px;           /* small footprint */
+    width: auto;
+  }
 </style>
 
 <!-- Navbar (appears after reveal) -->
@@ -188,6 +204,11 @@
     </div>
   </div>
 </div>
+
+<!-- Footer -->
+<footer class="footer">
+  <img src="/assets/techridy.png" alt="Powered by Techridy" />
+</footer>
 
 <script>
   const API = "https://api.bristolbloods.com";
