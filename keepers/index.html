@@ -1,101 +1,150 @@
 <!doctype html>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bristol Bloods — Keepers</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keepers • Bristol Bloods</title>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 
 <style>
-  :root { color-scheme: dark; --red:#ff3b3b }
+  :root{
+    color-scheme: dark;
+    --red: #ff3b3b;
 
-  html,body{margin:0}
-  body{background:#000;color:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    /* Avatar sizing and card spacing */
+    --avatar: 112px;          /* desktop circle size */
+    --avatar-gap: 16px;
+    --card-pad: 14px;
+    --card-radius: 14px;
 
-  /* Navbar (same as other pages, just with Keepers active) */
-  header{
-    display:flex; align-items:center; gap:18px; padding:12px 20px 10px;
-    border-bottom:1px solid #151515; background:#000; position:sticky; top:0; z-index:10;
+    /* Type scale (kept modest for mobile) */
+    --t-player: clamp(15px, 2.8vw, 18px);
+    --t-pos:    12px;
+    --t-team:   clamp(14px, 2.4vw, 16px);
+    --t-owner:  clamp(16px, 3.4vw, 22px);
   }
-  .brand{margin-right:auto; font-weight:800; letter-spacing:.2px}
-  .brand a{color:#fff; text-decoration:none}
-  nav{display:flex; gap:18px}
-  nav a{
+
+  @media (max-width: 560px){
+    :root{
+      --avatar: 96px;         /* identical on all cards */
+      --avatar-gap: 14px;
+      --card-pad: 12px;
+    }
+  }
+
+  html, body { height:100%; margin:0 }
+  body{
+    background:#000; color:#fff;
+    font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  }
+
+  /* ===== Navbar (same as draft order) ===== */
+  header {
+    position:sticky; top:0; z-index:10;
+    background:#000; border-bottom:1px solid #151515;
+    padding:12px 16px 10px;
+    display:flex; align-items:center; gap:16px;
+  }
+  .brand { display:flex; align-items:center; margin-right:auto; }
+  .brand img { height: clamp(24px, 4.2vw, 42px); width:auto; display:block; }
+  nav { display:flex; gap:18px; align-items:center; }
+  nav a {
     color:#cfcfcf; text-decoration:none; font-size:14px; padding:6px 2px;
     border-bottom:2px solid transparent; transition:border-color .15s,color .15s;
   }
-  nav a:hover{color:#fff; border-color:var(--red)}
-  nav a[aria-current="page"]{color:#fff; border-color:var(--red)}
+  nav a:hover { color:#fff; border-color:var(--red); }
+  nav a[aria-current="page"] { color:#fff; border-color:var(--red); }
+  @media (max-width:620px){
+    .brand{ display:none; }       /* match draft page behavior so tabs stay centered */
+    header{ justify-content:center; }
+  }
 
-  .stamp{margin-left:auto; color:#aaa; font-size:13px; white-space:nowrap}
-
-  /* Grid (fixed 2 columns x 6 rows) */
+  /* ===== Grid ===== */
   .grid{
     display:grid; gap:16px; padding:16px; max-width:1000px; margin:0 auto;
-    grid-template-columns:repeat(2,1fr);
+    grid-template-columns: repeat(2, 1fr);  /* fixed 2 columns as requested */
   }
 
-  /* Card */
   .card{
-    background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:12px;
-    display:flex; flex-direction:column; align-items:center;
+    background:#0b0b0b; border:1px solid #141414; border-radius:var(--card-radius);
+    padding:var(--card-pad); display:flex; flex-direction:column; align-items:center;
   }
 
-  .first-name{
-    font-weight:900; font-size:clamp(18px,2.6vw,22px); letter-spacing:.2px; margin:4px 0 10px;
+  /* Owner name at top */
+  .owner{
+    font-weight:800; font-size:var(--t-owner); margin:4px 0 10px; text-align:center;
   }
 
-  /* Middle “keeper card” region */
-  .keepers{
-    width:100%; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;
+  /* Avatar row: two circles locked to same size */
+  .avatars{
+    display:flex; gap:var(--avatar-gap); align-items:center; justify-content:center;
+    margin-bottom:10px;
   }
-
-  .headshot{
-    display:flex; flex-direction:column; align-items:center; gap:8px;
-  }
-
   .circle{
-    width:100%; aspect-ratio:1/1; border-radius:999px; overflow:hidden;
+    width:var(--avatar); height:var(--avatar); border-radius:50%;
     background:
-      repeating-linear-gradient(45deg,#0f0f0f,#0f0f0f 10px,#111 10px,#111 20px);
-    border:1px solid #181818; display:grid; place-items:center;
+      radial-gradient(65% 65% at 30% 30%, #1a1a1a, #0d0d0d 70%),
+      #111;
+    border:1px solid #222;
+    display:grid; place-items:center; overflow:hidden;
   }
-  .circle img{width:100%; height:100%; object-fit:cover; display:block}
+  .circle img{
+    width:100%; height:100%; object-fit:contain;   /* perfect for transparent PNGs */
+    display:block;
+  }
 
-  .pname{font-weight:800; text-align:center}
-  .pos{color:#aaa; font-size:13px; text-align:center; margin-top:-2px}
+  .name{
+    font-size:var(--t-player); font-weight:800; margin:6px 0 2px; text-align:center;
+  }
+  .pos{
+    color:#9aa; font-size:var(--t-pos); margin:0 0 6px; text-transform:uppercase; letter-spacing:.4px;
+  }
 
+  /* Team label pinned to bottom */
   .team{
-    margin-top:12px; font-weight:800; color:#ddd; text-align:center;
-  }
-
-  /* Small motion */
-  @media (prefers-reduced-motion:no-preference){
-    .fade-in{animation:fade .35s ease both}
-    @keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
-  }
-
-  /* Mobile niceties */
-  @media (max-width:640px){
-    .grid{gap:14px; padding:12px}
+    margin-top:auto;              /* pushes to bottom */
+    text-align:center; color:#ddd; font-weight:800; font-size:var(--t-team);
+    line-height:1.3;
   }
 </style>
 
 <header>
-  <div class="brand"><a href="/">Bristol Bloods</a></div>
+  <div class="brand"><img src="/assets/logo-red-wide.svg" alt="Bristol Bloods"></div>
   <nav>
     <a href="/">Home</a>
     <a href="/keepers" aria-current="page">Keepers</a>
     <a href="/overview">Draft Order</a>
   </nav>
-  <div id="stamp" class="stamp" aria-live="polite">Last updated: —</div>
 </header>
 
-<section class="grid" id="grid" aria-label="Keepers, two columns"></section>
+<section class="grid" id="keepersGrid" aria-label="2 by 6 keepers grid">
+  <!-- Example card (structure you populate) -->
+  <!-- Repeat this structure 12 times, sorted A→Z by team/owner as you prefer -->
+  <!--
+  <article class="card">
+    <div class="owner">James</div>
+    <div class="avatars">
+      <div class="circle"><img src="/path/to/headshot1.png" alt="Ja'Marr Chase headshot"></div>
+      <div class="circle"><img src="/path/to/headshot2.png" alt="De'Von Achane headshot"></div>
+    </div>
+    <div class="name">Ja'Marr Chase</div>
+    <div class="pos">WR</div>
+    <div class="name">De'Von Achane</div>
+    <div class="pos">RB</div>
+    <div class="team">BAD NEWS FOR ERICA</div>
+  </article>
+  -->
+</section>
 
 <script>
-/**
- * You can swap the image URLs later. Leave empty ("") for the placeholder.
- * Sorting is alphabetical by team name.
- */
+/*
+  Populate the grid the same way you were before.
+  The only UI opinions baked in here:
+  - Fixed avatar size via --avatar, identical across all cards
+  - Owner at top, team at bottom
+  - Player name/position pairs between the circles and team name
+  - No timestamp (removed)
+  - SVG brand in header (matches draft page)
+*/
+
 const TEAMS = [
   {
     team: "BAD NEWS FOR ERICA",
@@ -118,7 +167,7 @@ const TEAMS = [
     firstName: "Amy",
     players: [
       { name: "Justin Jefferson", pos: "WR", img: "" },
-      { name: "CeeDee Lamb", pos: "WR", img: "" },
+      { name: "CeeDee Lamb", pos: "WR", img: "/photos/ceedee.png" },
     ],
   },
   {
@@ -149,8 +198,8 @@ const TEAMS = [
     team: "I DIGGS a CHUBB!!",
     firstName: "Erica",
     players: [
-      { name: "Kyren Williams", pos: "RB", img: "" },
-      { name: "Saquon Barkley", pos: "RB", img: "" },
+      { name: "Kyren Williams", pos: "RB", img: "/photos/kyren.png" },
+      { name: "Saquon Barkley", pos: "RB", img: "/photos/saquon.png" },
     ],
   },
   {
@@ -195,62 +244,25 @@ const TEAMS = [
   },
 ];
 
-function placeholderCircle() {
-  const d = document.createElement('div');
-  d.className = 'circle';
-  d.setAttribute('aria-hidden','true');
-  d.innerHTML = `<svg viewBox="0 0 120 120" width="60%" height="60%" role="img" aria-label="placeholder">
-    <circle cx="60" cy="60" r="54" fill="#0e0e0e" stroke="#1a1a1a" stroke-width="4"/>
-    <circle cx="60" cy="52" r="22" fill="#141414"/>
-    <rect   x="32" y="82" width="56" height="18" rx="9" fill="#141414"/>
-  </svg>`;
-  return d;
-}
+/* Optional: sort alphabetically by owner or team */
+TEAMS.sort((a,b) => a.owner.localeCompare(b.owner));
 
-function card(t) {
-  const el = document.createElement('div');
-  el.className = 'card fade-in';
-
-  const p1 = t.players[0] || {name:"—",pos:"",img:""};
-  const p2 = t.players[1] || {name:"—",pos:"",img:""};
-
-  el.innerHTML = `
-    <div class="first-name">${t.firstName ?? "—"}</div>
-    <div class="keepers">
-      <div class="headshot">
-        <div class="circle">${p1.img ? `<img alt="${p1.name}" src="${p1.img}" loading="lazy">` : ""}</div>
-        <div class="pname">${p1.name}</div>
-        <div class="pos">${p1.pos}</div>
-      </div>
-      <div class="headshot">
-        <div class="circle">${p2.img ? `<img alt="${p2.name}" src="${p2.img}" loading="lazy">` : ""}</div>
-        <div class="pname">${p2.name}</div>
-        <div class="pos">${p2.pos}</div>
-      </div>
+const grid = document.getElementById('keepersGrid');
+for (const t of TEAMS) {
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="owner">${t.owner}</div>
+    <div class="avatars">
+      <div class="circle"><img alt="${t.players[0]?.name || 'Player'} headshot" ${t.players[0]?.img ? `src="${t.players[0].img}"` : ""}></div>
+      <div class="circle"><img alt="${t.players[1]?.name || 'Player'} headshot" ${t.players[1]?.img ? `src="${t.players[1].img}""` : ""}></div>
     </div>
-    <div class="team">${t.team}</div>
+    <div class="name">${t.players[0]?.name || "—"}</div>
+    <div class="pos">${t.players[0]?.pos || ""}</div>
+    <div class="name">${t.players[1]?.name || "—"}</div>
+    <div class="pos">${t.players[1]?.pos || ""}</div>
+    <div class="team">${t.team || ""}</div>
   `;
-
-  // If img is missing, drop in the SVG placeholder
-  [...el.querySelectorAll('.circle')].forEach(c=>{
-    if(!c.querySelector('img')) c.replaceWith(placeholderCircle());
-  });
-
-  return el;
+  grid.appendChild(card);
 }
-
-function load() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = "";
-
-  const rows = [...TEAMS].sort((a,b)=>a.team.localeCompare(b.team));
-  for (const t of rows) grid.appendChild(card(t));
-
-  const time = new Intl.DateTimeFormat(undefined,{
-    hour:'numeric', minute:'2-digit', second:'2-digit'
-  }).format(new Date());
-  document.getElementById('stamp').textContent = "Last updated: " + time;
-}
-
-load();
 </script>
