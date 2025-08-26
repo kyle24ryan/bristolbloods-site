@@ -79,6 +79,16 @@
   .btn:active{ transform:scale(.98) }
   .btn[disabled]{ opacity:.6; cursor:not-allowed }
 
+  #redoBtn .count {
+    margin-left:8px;
+    font-size:12px;
+    color:#aaa;
+    font-weight:600;
+  }
+  #redoBtn[disabled] {
+    opacity:.7;
+    cursor:not-allowed;
+  }
   /* Loader */
   .loader {
     display:none; flex-direction: column; gap:12px;
@@ -186,8 +196,10 @@
       <a id="canon" class="link" target="_blank" rel="noopener" style="display:none">Open image URL</a>
     </div>
     <div class="redo">
-      <button id="redoBtn" class="btn" style="background:#222;border-color:#333">New image</button>
-      <span id="redoLeft" style="color:#aaa;font-size:12px;margin-left:8px"></span>
+      <button id="redoBtn" class="btn" style="background:#222;border-color:#333">
+        <span class="label">Regenerate Image</span>
+        <span class="count" aria-live="polite"></span>
+      </button>
     </div>
     <div class="nav">
       <a class="ghost" href="/overview/">
@@ -238,19 +250,22 @@
     }
   });
 
+  // --- Regenerate button (counter lives INSIDE the button) ---
   const redoBtn  = document.getElementById('redoBtn');
-  const redoLeft = document.getElementById('redoLeft');
+  const countEl  = redoBtn?.querySelector('.count');
   
   function setRedoLabel(n){
-    if (typeof n === 'number') {
-      redoLeft.textContent = `(${n} left)`;
+    if (typeof n === 'number' && countEl) {
+      countEl.textContent = `(${n} left)`;
       redoBtn.disabled = n <= 0;
     }
   }
   
-  redoBtn.addEventListener('click', async () => {
+  redoBtn?.addEventListener('click', async () => {
     if (!name) return;
     redoBtn.disabled = true;
+  
+    // keep UI consistent while we work
     startLoading();
     imgEl.hidden = true;
   
@@ -260,25 +275,41 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name })
       });
+  
       const data = await res.json();
-      if (!res.ok || !data.ok) {
+  
+      if (!res.ok || !data?.ok) {
         stopLoading();
-        redoBtn.disabled = false;
+        // re-enable only if there's quota left
+        if (typeof data?.remaining === 'number') {
+          setRedoLabel(data.remaining);
+          redoBtn.disabled = data.remaining <= 0;
+        } else {
+          redoBtn.disabled = false;
+        }
         alert(data?.error || 'Failed to regenerate');
-        if (typeof data?.remaining === 'number') setRedoLabel(data.remaining);
         return;
       }
   
+      // Update the inline counter first
       setRedoLabel(data.remaining);
   
-      // Bust cache and swap in the freshly overwritten PNG from R2
+      // Bust cache and show the freshly overwritten PNG from R2
       const slug = (name || "").trim().toLowerCase().replace(/\s+/g,'-');
       imgEl.src = `${API}/image/${slug}.png?cb=${Date.now()}`;
+  
       imgEl.onload = () => {
         stopLoading();
         imgEl.hidden = false;
         redoBtn.disabled = data.remaining <= 0;
       };
+  
+      imgEl.onerror = () => {
+        stopLoading();
+        redoBtn.disabled = false;
+        alert('Could not load new image. Try again.');
+      };
+  
     } catch (e) {
       stopLoading();
       redoBtn.disabled = false;
