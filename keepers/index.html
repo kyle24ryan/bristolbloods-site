@@ -1,117 +1,256 @@
 <!doctype html>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Keepers • Coming Soon — Bristol Bloods</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bristol Bloods — Keepers</title>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 
 <style>
-  :root{
-    color-scheme: dark;
-    --red:#e11;
+  :root { color-scheme: dark; --red:#ff3b3b }
+
+  html,body{margin:0}
+  body{background:#000;color:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+
+  /* Navbar (same as other pages, just with Keepers active) */
+  header{
+    display:flex; align-items:center; gap:18px; padding:12px 20px 10px;
+    border-bottom:1px solid #151515; background:#000; position:sticky; top:0; z-index:10;
   }
-  html, body { height:100%; margin:0 }
-  body{
-    background:#000; color:#fff;
-    font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    display:grid; place-items:center; padding:24px 16px;
+  .brand{margin-right:auto; font-weight:800; letter-spacing:.2px}
+  .brand a{color:#fff; text-decoration:none}
+  nav{display:flex; gap:18px}
+  nav a{
+    color:#cfcfcf; text-decoration:none; font-size:14px; padding:6px 2px;
+    border-bottom:2px solid transparent; transition:border-color .15s,color .15s;
   }
-  .wrap{
-    width:100%; min-height:100dvh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;  /* vertical balance */
-    align-items:center;      /* horizontal center */
-    gap:14px;
-    text-align:center;
-  }
-  
-  /* Center and scale logo properly */
-  .logo {
-    margin: 0 auto 8px;       /* centers horizontally, adds bottom spacing */
-    display: flex;
-    justify-content: center;
-  }
-  
-  .logo img {
-    display: block;
-    height: auto;
-    max-width: 600px;         /* desktop cap */
-    width: 100%;
-  }
-  
-  @media (max-width: 560px) {
-    .logo img {
-      max-width: 340px;       /* stacked version cap */
-    }
+  nav a:hover{color:#fff; border-color:var(--red)}
+  nav a[aria-current="page"]{color:#fff; border-color:var(--red)}
+
+  .stamp{margin-left:auto; color:#aaa; font-size:13px; white-space:nowrap}
+
+  /* Grid (fixed 2 columns x 6 rows) */
+  .grid{
+    display:grid; gap:16px; padding:16px; max-width:1000px; margin:0 auto;
+    grid-template-columns:repeat(2,1fr);
   }
 
-  /* Card-ish container */
-  .panel{
-    width:min(92vw, 560px);           /* narrower so it sits under the logo nicely */
-    background:#0b0b0b; border:1px solid #141414; border-radius:18px;
-    padding:22px; box-shadow:0 10px 40px rgba(0,0,0,.35);
+  /* Card */
+  .card{
+    background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:12px;
+    display:flex; flex-direction:column; align-items:center;
   }
 
-  h1{
-    margin:6px 0 8px;
-    font-size:clamp(22px, 4.6vw, 34px);
-    letter-spacing:.2px;
-  }
-  .sub{
-    color:#bdbdbd; margin:0 0 14px;
-    max-width:36ch;                   /* keep text measure comfy */
-    margin-left:auto; margin-right:auto;
+  .first-name{
+    font-weight:900; font-size:clamp(18px,2.6vw,22px); letter-spacing:.2px; margin:4px 0 10px;
   }
 
-  .row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:14px }
-  .btn{
-    --bg:#151515; --bd:#2a2a2a; --fg:#fff;
-    display:inline-flex; align-items:center; justify-content:center; gap:10px;
-    padding:12px 16px; border-radius:12px; text-decoration:none; color:var(--fg);
-    border:1px solid var(--bd); background:var(--bg); font-weight:800; letter-spacing:.2px;
-    box-shadow:0 6px 18px rgba(0,0,0,.35); transition:transform .08s ease, border-color .15s ease, filter .15s ease;
+  /* Middle “keeper card” region */
+  .keepers{
+    width:100%; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;
   }
-  .btn:hover{ transform:translateY(-1px); filter:brightness(1.05) }
-  .btn:active{ transform:translateY(0) scale(.98) }
-  .btn--primary{ --bg:var(--red); --bd:var(--red) }
 
-  .icon{ width:18px; height:18px; display:inline-block }
+  .headshot{
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+
+  .circle{
+    width:100%; aspect-ratio:1/1; border-radius:999px; overflow:hidden;
+    background:
+      repeating-linear-gradient(45deg,#0f0f0f,#0f0f0f 10px,#111 10px,#111 20px);
+    border:1px solid #181818; display:grid; place-items:center;
+  }
+  .circle img{width:100%; height:100%; object-fit:cover; display:block}
+
+  .pname{font-weight:800; text-align:center}
+  .pos{color:#aaa; font-size:13px; text-align:center; margin-top:-2px}
+
+  .team{
+    margin-top:12px; font-weight:800; color:#ddd; text-align:center;
+  }
+
+  /* Small motion */
+  @media (prefers-reduced-motion:no-preference){
+    .fade-in{animation:fade .35s ease both}
+    @keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+  }
+
+  /* Mobile niceties */
+  @media (max-width:640px){
+    .grid{gap:14px; padding:12px}
+  }
 </style>
 
-<div class="wrap">
-  <!-- Logo swaps automatically: wide by default, stacked under 560px -->
-  <div class="logo">
-    <picture>
-      <source srcset="/assets/logo-red-stacked.svg" media="(max-width: 560px)" />
-      <img src="/assets/logo-red-wide.svg" alt="Bristol Bloods" />
-    </picture>
-  </div>
+<header>
+  <div class="brand"><a href="/">Bristol Bloods</a></div>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/keepers" aria-current="page">Keepers</a>
+    <a href="/overview">Draft Order</a>
+  </nav>
+  <div id="stamp" class="stamp" aria-live="polite">Last updated: —</div>
+</header>
 
-  <div class="panel">
-    <h1>Coming Soon</h1>
-    <p class="sub">
-      Your future regrets are being formatted. Keeper reveal coming soon.
-    </p>
+<section class="grid" id="grid" aria-label="Keepers, two columns"></section>
 
-    <div class="row">
-      <a class="btn btn--primary" href="/overview/">
-        <!-- Numbered list icon -->
-        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M9 6h12M9 12h12M9 18h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-          <path d="M5 5.6V8M4 8h2" stroke="#fff" stroke-width="2" stroke-linecap="round" />
-          <path d="M4 12h2M5 12v3" stroke="#fff" stroke-width="2" stroke-linecap="round" />
-          <path d="M3.6 17.8h2.8" stroke="#fff" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        Draft Order
-      </a>
+<script>
+/**
+ * You can swap the image URLs later. Leave empty ("") for the placeholder.
+ * Sorting is alphabetical by team name.
+ */
+const TEAMS = [
+  {
+    team: "BAD NEWS FOR ERICA",
+    firstName: "James",
+    players: [
+      { name: "Ja'Marr Chase", pos: "WR", img: "" },
+      { name: "De'Von Achane", pos: "RB", img: "" },
+    ],
+  },
+  {
+    team: "Cocktails and Dreams",
+    firstName: "Jared",
+    players: [
+      { name: "Christian McCaffrey", pos: "RB", img: "" },
+      { name: "Jayden Daniels", pos: "QB", img: "" },
+    ],
+  },
+  {
+    team: "F My Fantasy Football Team",
+    firstName: "Amy",
+    players: [
+      { name: "Justin Jefferson", pos: "WR", img: "" },
+      { name: "CeeDee Lamb", pos: "WR", img: "" },
+    ],
+  },
+  {
+    team: "Flower Power",
+    firstName: "Kristyn",
+    players: [
+      { name: "Josh Allen", pos: "QB", img: "" },
+      { name: "Nico Collins", pos: "WR", img: "" },
+    ],
+  },
+  {
+    team: "Hallin ass",
+    firstName: "Mike",
+    players: [
+      { name: "Trey McBride", pos: "TE", img: "" },
+      { name: "Tee Higgins", pos: "WR", img: "" },
+    ],
+  },
+  {
+    team: "High Expectations",
+    firstName: "Justin",
+    players: [
+      { name: "Ricky Pearsall", pos: "WR", img: "" },
+      { name: "Ladd McConkey", pos: "WR", img: "" },
+    ],
+  },
+  {
+    team: "I DIGGS a CHUBB!!",
+    firstName: "Erica",
+    players: [
+      { name: "Kyren Williams", pos: "RB", img: "" },
+      { name: "Saquon Barkley", pos: "RB", img: "" },
+    ],
+  },
+  {
+    team: "PROEJCT BADASS".replace("OE","OJ"), // cute guard in case of typo
+    firstName: "Tommy",
+    players: [
+      { name: "Bijan Robinson", pos: "RB", img: "" },
+      { name: "Lamar Jackson", pos: "QB", img: "" },
+    ],
+  },
+  {
+    team: "Protein Balls",
+    firstName: "Travis",
+    players: [
+      { name: "Drake London", pos: "WR", img: "" },
+      { name: "Brian Thomas Jr.", pos: "WR", img: "" },
+    ],
+  },
+  {
+    team: "Team Bad Luck",
+    firstName: "Chino",
+    players: [
+      { name: "Puka Nacua", pos: "WR", img: "" },
+      { name: "Derrick Henry", pos: "RB", img: "" },
+    ],
+  },
+  {
+    team: "The Losing Edge",
+    firstName: "Kyle",
+    players: [
+      { name: "Sam LaPorta", pos: "TE", img: "" },
+      { name: "Jonathan Taylor", pos: "RB", img: "" },
+    ],
+  },
+  {
+    team: "Your Mom's Haus",
+    firstName: "Ovi",
+    players: [
+      { name: "Jahmyr Gibbs", pos: "RB", img: "" },
+      { name: "Garrett Wilson", pos: "WR", img: "" },
+    ],
+  },
+];
 
-      <a class="btn" href="/">
-        <!-- Home icon -->
-        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M3 12l9-9 9 9M5 10v10h14V10" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Home
-      </a>
+function placeholderCircle() {
+  const d = document.createElement('div');
+  d.className = 'circle';
+  d.setAttribute('aria-hidden','true');
+  d.innerHTML = `<svg viewBox="0 0 120 120" width="60%" height="60%" role="img" aria-label="placeholder">
+    <circle cx="60" cy="60" r="54" fill="#0e0e0e" stroke="#1a1a1a" stroke-width="4"/>
+    <circle cx="60" cy="52" r="22" fill="#141414"/>
+    <rect   x="32" y="82" width="56" height="18" rx="9" fill="#141414"/>
+  </svg>`;
+  return d;
+}
+
+function card(t) {
+  const el = document.createElement('div');
+  el.className = 'card fade-in';
+
+  const p1 = t.players[0] || {name:"—",pos:"",img:""};
+  const p2 = t.players[1] || {name:"—",pos:"",img:""};
+
+  el.innerHTML = `
+    <div class="first-name">${t.firstName ?? "—"}</div>
+    <div class="keepers">
+      <div class="headshot">
+        <div class="circle">${p1.img ? `<img alt="${p1.name}" src="${p1.img}" loading="lazy">` : ""}</div>
+        <div class="pname">${p1.name}</div>
+        <div class="pos">${p1.pos}</div>
+      </div>
+      <div class="headshot">
+        <div class="circle">${p2.img ? `<img alt="${p2.name}" src="${p2.img}" loading="lazy">` : ""}</div>
+        <div class="pname">${p2.name}</div>
+        <div class="pos">${p2.pos}</div>
+      </div>
     </div>
-  </div>
-</div>
+    <div class="team">${t.team}</div>
+  `;
+
+  // If img is missing, drop in the SVG placeholder
+  [...el.querySelectorAll('.circle')].forEach(c=>{
+    if(!c.querySelector('img')) c.replaceWith(placeholderCircle());
+  });
+
+  return el;
+}
+
+function load() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = "";
+
+  const rows = [...TEAMS].sort((a,b)=>a.team.localeCompare(b.team));
+  for (const t of rows) grid.appendChild(card(t));
+
+  const time = new Intl.DateTimeFormat(undefined,{
+    hour:'numeric', minute:'2-digit', second:'2-digit'
+  }).format(new Date());
+  document.getElementById('stamp').textContent = "Last updated: " + time;
+}
+
+load();
+</script>
