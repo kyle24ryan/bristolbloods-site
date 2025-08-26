@@ -185,6 +185,10 @@
       <span id="stamp"></span>
       <a id="canon" class="link" target="_blank" rel="noopener" style="display:none">Open image URL</a>
     </div>
+    <div class="redo">
+      <button id="redoBtn" class="btn" style="background:#222;border-color:#333">New image</button>
+      <span id="redoLeft" style="color:#aaa;font-size:12px;margin-left:8px"></span>
+    </div>
     <div class="nav">
       <a class="ghost" href="/overview/">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px">
@@ -231,6 +235,54 @@
     if (headerEl.style.display !== 'none') {
       const h = headerEl.offsetHeight || 0;
       document.documentElement.style.setProperty('--head', h + 'px');
+    }
+  });
+
+  const redoBtn  = document.getElementById('redoBtn');
+  const redoLeft = document.getElementById('redoLeft');
+  
+  function setRedoLabel(n){
+    if (typeof n === 'number') {
+      redoLeft.textContent = `(${n} left)`;
+      redoBtn.disabled = n <= 0;
+    }
+  }
+  
+  redoBtn.addEventListener('click', async () => {
+    if (!name) return;
+    redoBtn.disabled = true;
+    startLoading();
+    imgEl.hidden = true;
+  
+    try {
+      const res = await fetch(`${API}/regenerate`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        stopLoading();
+        redoBtn.disabled = false;
+        alert(data?.error || 'Failed to regenerate');
+        if (typeof data?.remaining === 'number') setRedoLabel(data.remaining);
+        return;
+      }
+  
+      setRedoLabel(data.remaining);
+  
+      // Bust cache and swap in the freshly overwritten PNG from R2
+      const slug = (name || "").trim().toLowerCase().replace(/\s+/g,'-');
+      imgEl.src = `${API}/image/${slug}.png?cb=${Date.now()}`;
+      imgEl.onload = () => {
+        stopLoading();
+        imgEl.hidden = false;
+        redoBtn.disabled = data.remaining <= 0;
+      };
+    } catch (e) {
+      stopLoading();
+      redoBtn.disabled = false;
+      alert('Could not regenerate. Try again.');
     }
   });
 
