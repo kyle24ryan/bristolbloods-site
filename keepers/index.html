@@ -135,16 +135,6 @@
 </section>
 
 <script>
-/*
-  Populate the grid the same way you were before.
-  The only UI opinions baked in here:
-  - Fixed avatar size via --avatar, identical across all cards
-  - Owner at top, team at bottom
-  - Player name/position pairs between the circles and team name
-  - No timestamp (removed)
-  - SVG brand in header (matches draft page)
-*/
-
 const TEAMS = [
   {
     team: "BAD NEWS FOR ERICA",
@@ -203,7 +193,7 @@ const TEAMS = [
     ],
   },
   {
-    team: "PROEJCT BADASS".replace("OE","OJ"), // cute guard in case of typo
+    team: "PROJECT BADASS",
     firstName: "Tommy",
     players: [
       { name: "Bijan Robinson", pos: "RB", img: "" },
@@ -244,18 +234,18 @@ const TEAMS = [
   },
 ];
 
-/* Optional: sort alphabetically by owner or team */
-TEAMS.sort((a,b) => a.owner.localeCompare(b.owner));
+// Sort alphabetically by owner (firstName)
+TEAMS.sort((a, b) => a.firstName.localeCompare(b.firstName));
 
 const grid = document.getElementById('keepersGrid');
 for (const t of TEAMS) {
   const card = document.createElement('article');
   card.className = 'card';
   card.innerHTML = `
-    <div class="owner">${t.owner}</div>
+    <div class="owner">${t.firstName}</div>
     <div class="avatars">
       <div class="circle"><img alt="${t.players[0]?.name || 'Player'} headshot" ${t.players[0]?.img ? `src="${t.players[0].img}"` : ""}></div>
-      <div class="circle"><img alt="${t.players[1]?.name || 'Player'} headshot" ${t.players[1]?.img ? `src="${t.players[1].img}""` : ""}></div>
+      <div class="circle"><img alt="${t.players[1]?.name || 'Player'} headshot" ${t.players[1]?.img ? `src="${t.players[1].img}"` : ""}></div>
     </div>
     <div class="name">${t.players[0]?.name || "—"}</div>
     <div class="pos">${t.players[0]?.pos || ""}</div>
