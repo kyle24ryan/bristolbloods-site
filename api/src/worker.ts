@@ -27,186 +27,159 @@ const PHOTO_FILES: Record<string, string> = {
   erica: "erica.jpg"
 };
 
-// ------------------ PIXAR PROMPTS ------------------
-const PIXAR_PROMPTS: Record<string, string> = {
-  kyle: `
-Pixar Toy Story style 3D cartoon portrait poster of Kyle.
-Big, soft-rendered features; full beard, black-rim glasses, baseball cap worn backwards, medium build but not overweight.
+// ------------------ PIXAR GLOBAL RULES + PERSONAS ------------------
+
+const PIXAR_GLOBAL = `
+Pixar Toy Story style 3D cartoon portrait poster.
 Style: glossy, colorful Pixar character render, high detail, playful yet bold.
 Square poster layout 1024x1024.
 Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "KYLE" at top.
-Supporting title: "The Losing Edge" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-DO NOT INCLUDE ANY OTHER PEOPLE IN IMAGE.
-`.trim(),
+Large hand-painted red number {slot} (draft slot) is already present and DOMINANT.
+Team name should appear opposite the draft slot. The name should be COMPLETE and spelt correctly.  
 
-  amy: `
-Pixar Toy Story style 3D cartoon portrait poster of Amy.
-Big, soft-rendered features; expressive eyes, slightly anxious but playful expression, big boobs but not fat by any means.
-Style: glossy, colorful Pixar character render, high detail, whimsical yet bold.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "AMY" at top.
-Supporting title: "F My Fantasy Football Team" (team name and make sure to include the 'F').
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: tiny cat or dog icon, leafy tree silhouette, TV screen glow.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
+TYPOGRAPHY
+- Render EXACTLY TWO text elements: (1) FIRST NAME at top in bold white stencil; (2) ONE supporting title with the official team name (spelt correctly and complete).
+- Do NOT repeat the team name anywhere else. No duplicate captions, slogans, watermarks, or extra numbers.
 
-  james: `
-Pixar Toy Story style 3D cartoon portrait poster of James.
-Edgy, energetic look; tattoos visible, punk-rock hairstyle and soft/relaxed smile, always rocks the backwards hat to cover his bald head, and btw his shirt says Fat Spliffs.
-Style: glossy Pixar character render, high detail, bold and rebellious but still playful.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "JAMES" at top.
-Supporting title: "BAD NEWS FOR ERICA" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: guitar or music note, soccer ball detail, tattoo-inspired texture.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
+MOTIFS
+- Persona motifs (favorite teams, hobbies, icons) must be SUBTLE BACKGROUND textures and NO graphics or NO team names on the shirt.
+- Low contrast (≈10–20% opacity), monochrome/duotone, small scale.
+- Do NOT overlap the face, glasses, beard, or the large red {slot}. Keep clean margins.
 
-  jared: `
-Pixar Toy Story style 3D cartoon portrait poster of Jared.
-Smooth, polished features; confident, stylish expression, luxury vibe, not fat by any means just a little extra.
-Style: glossy Pixar character render, high detail, playful yet bold.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "JARED" at top.
-Supporting title: "Cocktails and Dreams" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: cocktail glass glow, luxury sneaker outline, casino/gambling chips.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
+COMPOSITION
+- Character remains the clear focal point; centered portrait framing with clean negative space.
+- No extra people. Handheld props are ok when appropiate. No poster borders or UI chrome.
+- Keep likeness if a base photo is provided; IMPORTANT maintain key facial characteristics.
+`.trim();
 
-  chino: `
-Pixar Toy Story style 3D cartoon portrait poster of Chino.
-Soft-rendered features; oversized t-shirt but not fat maybe a little chub, slightly slouched, with a worried smirk that suggests he’s ready to throw in the towel.
-Style: glossy, colorful Pixar character render, high detail, playful yet anxious.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric, with glowing stadium lights rising in the distance.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "CHINO" at top.
-Supporting title: "Team Bad Luck" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: fishing line or hook, faint puff of smoke/weed leaf worked into the background texture, scattered sports logos crossed out or faded to hint at no true fandom.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
-
-  justin: `
-Pixar Toy Story style 3D cartoon portrait poster of Justin.
-Soft-rendered features; shaved head, relaxed body language, with a carefree but intense expression.
-Style: glossy, colorful Pixar character render, high detail, playful yet cool.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric, with subtle silhouettes of stripper poles and neon club lights.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "JUSTIN" at top.
-Supporting title: "High Expectations" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: fishing rod detail, boat outline, faint turntables or DJ headphones blended into the background, smoky haze suggesting weed.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
-
-  kristyn: `
-Pixar Toy Story style 3D cartoon portrait poster of Kristyn.
-Relaxed, friendly expression; subtle cannabis/flower power vibe (tasteful).
-Style: glossy Pixar character render, high detail, playful yet calm.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "KRISTYN" at top.
-Supporting title: "Flower Power" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: small flower silhouette or leaf filigree.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
-
-  ovi: `
-Pixar Toy Story style 3D cartoon portrait poster of Ovi.
-Soft-rendered features; lean build, casual posture, with a smirk that feels confident but carries a subtle edge of melancholy.
-Style: glossy, colorful Pixar character render, high detail, playful yet reflective.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric, with a subtle Philadelphia Eagles stadium silhouette and faint mountain outline behind it.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "OVI" at top.
-Supporting title: "Your Mom's Haus" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: hot sauce bottle detail, faint Husky dog silhouette, glowing laptop/code snippet texture, small Eagles logo woven into the background.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo (tattoos visible, wearing a shirt). Make sure nothing is duplicated in the design.
-`.trim(),
-
-  erica: `
-Pixar Toy Story style 3D cartoon portrait poster of Erica.
-Soft-rendered features; sarcastic expression with a sideways smirk, playful but sharp personality shining through.
-Style: glossy, colorful Pixar character render, high detail, bold yet witty.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric, with a subtle New Jersey / New York skyline silhouette in the distance.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "ERICA" at top.
-Supporting title: "I DIGGS a CHUBB" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: small Giants logo detail, sarcastic “eye roll” motif woven faintly into the background texture.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
-
-  tommy: `
-Pixar Toy Story style 3D cartoon portrait poster of Tommy.
-Soft-rendered features; beard, slicked-back medium-length hair, with visible chest hair under a casual shirt. Expression set in a confident, shit-eating grin.
-Style: glossy, colorful Pixar character render, high detail, playful yet relaxed.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric, with subtle hospital iconography (heartbeat monitor line glow, faint cross silhouette) woven into the design.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "TOMMY" at top.
-Supporting title: "PROJECT BADASS" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: fantasy football trophy icon, nurse scrubs pocket silhouette, playful hint of five small stars or icons (for his five kids).
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
-
-  travis: `
-Pixar Toy Story style 3D cartoon portrait poster of Travis.
-Clean-cut, sharp features; tuxedo with bow tie for a dapper, model-like appearance. Expression set in a cocky, almost sarcastic glare.
-Style: glossy, colorful Pixar character render, high detail, elegant yet playful.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric, with subtle travel motifs (airplane contrails, faint passport stamp textures) woven into the design.
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "TRAVIS" at top.
-Supporting title: "Protein Balls" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: luxury car silhouette, faint engineering blueprint lines, small girl dad detail like a toy block or tiny tiara.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim(),
-
-  mike: `
-Pixar Toy Story style 3D cartoon portrait poster of Mike.
-Strong, confident look with a tight beard and sharp features. Expression set in an semi-intense but laid-back glare.
-Style: glossy, colorful Pixar character render, high detail, bold yet cool.
-Square poster layout 1024x1024.
-Background: matte black with faint dark-red bandana texture, softened into Pixar-like fabric, with subtle New York sports motifs (faint Jets logo silhouette, Mets baseball stitching texture, NYC skyline hints).
-Huge hand-painted red number {slot} (draft slot) dominant in the composition.
-Bold white stencil text: "MIKE" at top.
-Supporting title: "Hallin Ass" (team name).
-Design vibe: fantasy football draft reveal card, like an animated movie poster.
-Include subtle persona motifs: tattoo-inspired linework, faint mobster-movie silhouette (like a fedora or gangster outline) blended into the background.
-Keep likeness to the base photo if provided, but rendered in Toy Story cartoon style. Make sure the character maintains the facial characteristics of the real photo. Make sure nothing is duplicated in the design.
-`.trim()
+type Persona = {
+  appearance: string;
+  teamName: string;
+  motifs?: string[];      // subtle background / shirt motifs
+  background?: string[];  // optional big-scene hints (still subtle)
 };
 
-// Fallback if we don’t have a specific persona prompt
+const PERSONAS: Record<string, Persona> = {
+  kyle: {
+    appearance: "Full beard, black-rim glasses, baseball cap worn backwards, medium/average build (not overweight). Blue eyes.",
+    teamName: "The Losing Edge",
+    motifs: ["Miami Dolphins fan detail", "South Park motif (tiny, faint)"],
+    background: ["South Park landscape"],
+  },
+  amy: {
+    appearance: "Expressive eyes, slightly anxious but playful; petite build with large chest (boobs). Blue eyes.",
+    teamName: "F My Fantasy Football Team",
+    motifs: ["Seattle/PNW vibe", "Seahawks hint", "loves cats and dogs", "leafy tree silhouette", "TV screen glow"],
+    background: ["PNW forest"],
+  },
+  james: {
+    appearance: "Bald with backwards hat (no mohawk, no hair), tattoos, punk-rock vibe, relaxed smirk; shirt says 'Fat Spliffs' stay true to font style on shirt. Blue eyes.",
+    teamName: "BAD NEWS FOR ERICA",
+    motifs: ["Los Angeles Chargers hint", "guitar or music note for love of punk/ska", "soccer ball detail", "tattoo-inspired texture"],
+    background: ["concert venue vibes"],
+  },
+  jared: {
+    appearance: "Confident, polished look; stylish, luxury vibe; not fat (a little extra is fine).",
+    teamName: "Cocktails and Dreams",
+    motifs: ["NY Jets hint", "cocktail glass glow", "luxury sneaker outline", "casino/gambling chips"],
+    background: ["casino strip"],
+  },
+  chino: {
+    appearance: "Oversized t-shirt (not fat, maybe a little chub), slight slouch, worried smirk.",
+    teamName: "Team Bad Luck",
+    motifs: [
+      "fishing line / hook detail",
+      "faint puff of smoke / weed leaf woven into background",
+      "scattered, faded team logos to imply no true fandom"
+    ],
+    background: ["stadium lights rising subtly in distance"],
+  },
+  justin: {
+    appearance: "Shaved head, relaxed posture, carefree but intense expression.",
+    teamName: "High Expectations",
+    motifs: [
+      "fishing rod detail",
+      "boat outline",
+      "faint turntables or DJ headphones",
+      "smoky haze suggesting weed"
+    ],
+    background: ["subtle silhouettes of stripper poles", "neon club light glow"],
+  },
+  kristyn: {
+    appearance: "Relaxed, friendly expression; subtle flower/cannabis 'flower power' vibe (tasteful).",
+    teamName: "Flower Power",
+    motifs: ["small flower silhouette", "leaf filigree"],
+    background: ["science lab"],
+  },
+  ovi: {
+    appearance: "Lean build, casual posture, confident smirk with a hint of melancholy; tattoos visible; wearing a shirt.",
+    teamName: "Your Mom's Haus",
+    motifs: ["hot sauce bottle icon", "Husky dog silhouette", "glowing laptop/code snippet texture", "small Eagles hint"],
+    background: ["Philadelphia Eagles stadium silhouette", "faint mountain outline"],
+  },
+  erica: {
+    appearance: "Sarcastic sideways smirk; playful but sharp personality.",
+    teamName: "I DIGGS a CHUBB",
+    motifs: ["New York Giants hint", "faint sarcastic eye-roll motif woven into texture"],
+    background: ["subtle NJ/NY skyline silhouette"],
+  },
+  tommy: {
+    appearance: "Beard, slicked-back medium hair, visible chest hair under casual shirt; shit-eating grin.",
+    teamName: "PROJECT BADASS",
+    motifs: ["fantasy trophy icon", "nurse scrubs pocket silhouette", "five small icons/stars for five kids"],
+    background: ["subtle hospital motifs: heartbeat monitor line glow, faint cross silhouette"],
+  },
+  travis: {
+    appearance: "Clean-cut, sharp features; tuxedo with bow tie; cocky, serious model-like glare.",
+    teamName: "Protein Balls",
+    motifs: ["luxury car silhouette", "faint engineering blueprint lines", "tiny 'girl dad' detail (toy block or tiara)"],
+    background: ["subtle travel motifs: airplane contrails, passport stamp textures"],
+  },
+  mike: {
+    appearance: "Strong, confident look with tight beard; semi-intense but laid-back glare.",
+    teamName: "Hallin Ass",
+    motifs: ["tattoo linework", "faint mobster-movie silhouette (fedora/gangster outline)"],
+    background: ["NY sports hints: faint Jets silhouette, Mets stitching texture, NYC skyline hints"],
+  },
+};
+
+// Compose final prompt from global rules + persona
+function buildPixarPrompt(slug: string, firstName: string, slot: number): string {
+  const p = PERSONAS[slug];
+  const displayName = (firstName || slug || "").trim();
+  if (!p) {
+    return defaultPixarPrompt(displayName).replace("{slot}", String(slot));
+  }
+  const motifs = (p.motifs?.length ? p.motifs : []).map(m => `- ${m}`).join("\n");
+  const bg     = (p.background?.length ? p.background : []).map(b => `- ${b}`).join("\n");
+
+  return `
+${PIXAR_GLOBAL}
+
+CHARACTER
+${p.appearance}
+
+TEXT
+- Bold white stencil first name at top: "${displayName.toUpperCase()}".
+- Supporting title (team name, once only): "${p.teamName}".
+
+MOTIFS (apply as subtle textures)
+${motifs || "- (minimal)"}
+
+BACKGROUND (subtle, low-contrast)
+${bg || "- (keep background simple)"}
+`.replaceAll("{slot}", String(slot)).trim();
+}
+
 function defaultPixarPrompt(firstName: string): string {
   return `
 Pixar Toy Story style 3D cartoon portrait poster of ${firstName}.
 Square 1024x1024 poster with matte black background and faint dark-red bandana texture.
-Huge hand-painted red number {slot} (draft slot).
+Large hand-painted red number {slot} (draft slot).
 Bold white stencil text: "${firstName.toUpperCase()}" at top.
+Supporting title with the official team name (include ONCE only).
 Fantasy football draft reveal card, like an animated movie poster.
-Keep likeness to the base photo if provided.
+Keep likeness if base photo provided.
 `.trim();
 }
 
@@ -431,8 +404,7 @@ export class LeagueDO {
   }
 
   async renderCard(slug: string, firstName: string, slot: number): Promise<string> {
-    const base = PIXAR_PROMPTS[slug] || defaultPixarPrompt(firstName);
-    const prompt = base.replace("{slot}", String(slot));
+    const prompt = buildPixarPrompt(slug, firstName, slot);
 
     // Try with a base portrait (edits); fall back to generation
     const fileName = PHOTO_FILES[slug] || `${slug}.png`;
