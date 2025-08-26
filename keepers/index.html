@@ -114,13 +114,12 @@
     display:grid; place-items:center; overflow:hidden;
     isolation:isolate; /* needed for mix-blend-mode */
   }
-  .avatar img{
-    width: 100%; height: 100%;
+  .avatar img {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
-    /* If a headshot has a white canvas, this prevents a harsh white disc on dark */
-    mix-blend-mode: multiply;        /* white becomes dark/neutral on #111 */
-    image-rendering: auto;
-    display:block;
+    display: block;
+    background: transparent;  /* keep transparency */
   }
 
   .p-name{
