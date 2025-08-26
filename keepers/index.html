@@ -107,7 +107,7 @@
     text-align:center;
   }
 
-  .avatar{
+/*   .avatar{
     width: var(--avatar); height: var(--avatar);
     border-radius: 50%;
     border: 1px solid var(--avatar-ring);
@@ -124,7 +124,40 @@
     object-fit: contain;
     display: block;
     background: transparent;  /* keep transparency */
+  } */
+
+  /* Drop-in replacement */
+  .avatar{
+    position: relative;
+    width: var(--avatar); height: var(--avatar);
+    border-radius: 50%;
+    border: 1px solid var(--avatar-ring);
+    /* keep only the soft base here */
+    background:
+      radial-gradient(60% 60% at 30% 30%, #151515, #0d0d0d 70%),
+      #111;
+    display: grid; place-items: center; overflow: hidden;
   }
+  
+  /* Bandana texture as a faded overlay */
+  .avatar::before{
+    content: "";
+    position: absolute; inset: 0;
+    background: url("/assets/bandana.png") center/cover no-repeat;
+    opacity: var(--bandana-opacity, 0.18); /* adjust 0.10–0.30 to taste */
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  /* Headshot stays above the texture */
+  .avatar img{
+    position: relative;
+    z-index: 1;
+    width: 100%; height: 100%;
+    object-fit: contain;            /* great for transparent PNGs */
+    display: block;
+  }
+
 
   .p-name{
     margin: 10px 0 2px;
