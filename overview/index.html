@@ -5,18 +5,50 @@
 <style>
   :root { color-scheme: dark }
   body { margin:0; background:#000; color:#fff; font:16px/1.4 system-ui; }
-  header { padding:16px 20px; border-bottom:1px solid #151515; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-  h1 { margin:0; font-size:clamp(22px,3.2vw,34px); }
-  .muted { color:#999; font-size:13px; }
-  .stamp { color:#aaa; font-size:13px; margin-left:auto; white-space:nowrap; }
 
-  /* Fixed 2x6 grid, always two columns */
+  /* ===== Header ===== */
+  header {
+    padding:12px 20px 10px;
+    border-bottom:1px solid #151515;
+  }
+  .topbar {
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+  }
+  .brand { display:flex; align-items:center; gap:12px; min-width:0; }
+  .brand .logo {
+    height: clamp(44px, 8vw, 76px); /* readable wordmark on mobile & desktop */
+    width:auto; display:block;
+  }
+  nav { display:flex; align-items:center; gap:18px; }
+  nav a {
+    color:#cfcfcf; text-decoration:none; font-size:14px; padding:6px 2px;
+    border-bottom:2px solid transparent; transition:border-color .15s,color .15s;
+  }
+  nav a:hover { color:#fff; border-color:#ff3b3b; }
+  nav a[aria-current="page"] { color:#fff; border-color:#ff3b3b; }
+
+  .subbar {
+    display:grid; grid-template-columns: 1fr auto; align-items:end;
+    gap:6px 14px; margin-top:8px;
+  }
+  h1 { margin:0; font-weight:800; font-size:clamp(20px,3.2vw,28px); }
+  .tagline { color:#999; font-size:13px; }
+  .stamp { color:#aaa; font-size:13px; white-space:nowrap; }
+
+  /* Mobile: stack nav below logo */
+  @media (max-width: 520px) {
+    .topbar { flex-direction:column; align-items:flex-start; gap:10px; }
+    nav { gap:14px; }
+    .subbar { grid-template-columns: 1fr; }
+    .stamp { justify-self:start; }
+  }
+
+  /* ===== Grid (unchanged) ===== */
   .grid {
     display:grid; gap:16px; padding:16px;
     grid-template-columns: repeat(2, 1fr);
     max-width: 1000px; margin: 0 auto;
   }
-
   .card {
     background:#0b0b0b; border:1px solid #141414; border-radius:12px; padding:10px;
     display:flex; flex-direction:column; align-items:center;
@@ -32,25 +64,40 @@
   .imgbox { width:100%; aspect-ratio:1/1; border-radius:10px; overflow:hidden; background:#000; }
   img { width:100%; height:100%; object-fit:cover; display:block; }
 
-  /* Fun reveal animation */
+  /* Slower, smoother reveal animation */
   @media (prefers-reduced-motion: no-preference) {
-    .flip-in { animation: flipIn .5s ease both; }
-    .fade-up { animation: fadeUp .35s ease both; }
+    .flip-in { animation: flipIn .9s cubic-bezier(.2,.7,.2,1) both; }
+    .fade-up { animation: fadeUp .7s ease-out both; }
     @keyframes flipIn {
       from { transform: rotateY(-90deg) scale(.96); opacity: 0; }
       to   { transform: rotateY(0) scale(1);        opacity: 1; }
     }
     @keyframes fadeUp {
-      from { transform: translateY(6px); opacity: 0; }
+      from { transform: translateY(8px); opacity: 0; }
       to   { transform: translateY(0);   opacity: 1; }
     }
   }
 </style>
 
 <header>
-  <h1>Bristol Bloods — Draft Order</h1>
-  <div class="muted">Fills in as each coward braves the reveal.</div>
-  <div id="stamp" class="stamp" aria-live="polite">Last updated: —</div>
+  <div class="topbar">
+    <div class="brand">
+      <img class="logo" src="/assets/logo-red-wide.svg" alt="Bristol Bloods" />
+    </div>
+    <nav>
+      <a href="/"        >Home</a>
+      <a href="/keepers" >Keepers</a>
+      <a href="/draft"   aria-current="page">Draft Order</a>
+    </nav>
+  </div>
+
+  <div class="subbar">
+    <div>
+<!--       <h1>2025 Draft Order</h1> -->
+      <div class="tagline">Fills in as each coward braves the reveal.</div>
+    </div>
+    <div id="stamp" class="stamp" aria-live="polite">Last updated: —</div>
+  </div>
 </header>
 
 <section class="grid" id="grid" aria-label="Draft order, two columns"></section>
@@ -58,6 +105,10 @@
 <script>
 const API = "https://api.bristolbloods.com";
 const LEAGUE_SIZE = 12;
+const REFRESH_MS = 60000; // 2 minutes
+
+let pollTimer = null;
+let isFrozen = false;
 
 function tcase(s){ return s.replace(/\b\w/g, c => c.toUpperCase()); }
 
@@ -70,6 +121,11 @@ function placeholder(slot) {
     <div class="name muted">—</div>
   `;
   return el;
+}
+
+function updateStamp(text) {
+  const el = document.getElementById('stamp');
+  el.textContent = text;
 }
 
 async function load() {
@@ -103,13 +159,27 @@ async function load() {
     `;
   }
 
+  const revealedCount = rows.filter(r => r.imageUrl && String(r.imageUrl).trim() !== "").length;
   const now = new Date();
   const time = new Intl.DateTimeFormat(undefined, {
     hour: 'numeric', minute: '2-digit', second: '2-digit'
   }).format(now);
-  document.getElementById('stamp').textContent = "Last updated: " + time;
+
+  if (revealedCount >= LEAGUE_SIZE && !isFrozen) {
+    isFrozen = true;
+    if (pollTimer) clearInterval(pollTimer);
+    updateStamp(`All picks revealed — frozen at ${time}`);
+  } else if (!isFrozen) {
+    updateStamp(`Last updated: ${time}`);
+  }
 }
 
-load();
-setInterval(load, 10000); // refresh every 10s
+async function start() {
+  await load();
+  if (!isFrozen) {
+    pollTimer = setInterval(load, REFRESH_MS);
+  }
+}
+
+start();
 </script>

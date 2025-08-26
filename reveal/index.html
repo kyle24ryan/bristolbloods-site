@@ -10,29 +10,53 @@
     --red:#e11;
     --stack: 680px;         /* desktop/tablet max width */
     --stack-mobile: 380px;  /* phone max width */
+    --head: 0px;            /* header height (set by JS) */
   }
   html, body { height:100%; margin:0 }
   body{
     background:#000; color:#fff;
     font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    display:grid; place-items:center; padding:24px 16px;
+    display:block;
+    padding:24px 16px;
   }
+  body.has-header{ padding-top: calc(var(--head) + 8px); }
+
+  /* ===== Header (matches other pages) ===== */
+  header {
+    display:none;                 /* start hidden; shown via showHeader() */
+    position:fixed; top:0; left:0; right:0; z-index:10;
+    padding:12px 20px 10px;
+    border-bottom:1px solid #151515;
+    background:#000;
+    align-items:center; justify-content:space-between; gap:14px; /* flex set in JS */
+  }
+  .brand { display:flex; align-items:center; }
+  .brand img { height: clamp(28px, 5vw, 44px); width:auto; display:block; }
+  nav { display:flex; align-items:center; gap:18px; }
+  nav a {
+    color:#cfcfcf; text-decoration:none; font-size:14px; padding:6px 2px;
+    border-bottom:2px solid transparent; transition:border-color .15s,color .15s;
+  }
+  nav a:hover { color:#fff; border-color:#ff3b3b; }
+  nav a[aria-current="page"] { color:#fff; border-color:#ff3b3b; }
+  @media (max-width:520px){ header{ justify-content:center; } .brand{ display:none } }
+
+  /* ===== Layout ===== */
   .wrap{
-    width:100%; min-height:100dvh;
-    display:grid; align-content:center; justify-items:center; row-gap:14px; text-align:center;
+    width:100%;
+    min-height: calc(100dvh - var(--head) - 8px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center;
   }
-  .stack{ width:min(92vw, var(--stack)); }
+  .stack{ width:min(92vw, var(--stack)); margin-inline:auto; }
   @media (max-width:560px){ .stack{ width:min(92vw, var(--stack-mobile)); } }
 
   /* Logo */
-  .logo {
-    margin-bottom: 4px;
-    max-width: 300px;   /* keep it modest on desktop */
-  }
+  .logo { margin-top: 8px; margin-bottom: 4px; max-width: 300px; }
   .logo picture { display:block }
   .logo img { width:100%; height:auto; display:block; }
   @media (max-width:560px){
-    .logo { max-width: 400px; }   /* smaller on phones */
+    .logo { max-width: 400px; }
     .logo img { content:url("/assets/logo-red-stacked.svg"); }
     .greet{ max-width: 30ch; margin-left:auto; margin-right:auto; }
   }
@@ -49,6 +73,7 @@
     border:1px solid var(--red); background:var(--red); color:#fff;
     border-radius:12px; font-weight:800; cursor:pointer;
     transition: filter .2s ease, transform .08s ease;
+    font-size:16px; /* prevent iOS zoom */
   }
   .btn:hover{ filter:brightness(1.05) }
   .btn:active{ transform:scale(.98) }
@@ -56,34 +81,28 @@
 
   /* Loader */
   .loader {
-    display:none;
-    /* was a single row; make it a vertical column */
-    flex-direction: column;
-    gap:12px;
-    align-items:center;
-    justify-content:center;
-    color:#aaa;
+    display:none; flex-direction: column; gap:12px;
+    align-items:center; justify-content:center; color:#aaa;
   }
-  
-  .spinner {
-    width:18px; 
-    height:18px; 
-    border-radius:50%;
-    border:3px solid #330;          /* dark red base ring */
-    border-top-color: var(--red);   /* bright red spinner */
-    animation: spin .8s linear infinite;
-  }
-  @keyframes spin { 
-    to { transform: rotate(360deg) } 
-  }
+  .spinner { width:18px; height:18px; border-radius:50%;
+    border:3px solid #330; border-top-color: var(--red); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg) } }
 
   /* Image card */
   .card{
     width:100%;
     background:#0b0b0b; border:1px solid #141414; border-radius:14px;
-    padding:12px; display:none;
+/*     padding:12px;  */
+    display:none;
+    margin-inline:auto;
   }
-  .card img{ width:100%; height:auto; display:block; border-radius:10px; background:#000 }
+  .media { display:flex; align-items:center; justify-content:center; }
+  .card img{
+    display:block;
+    width:auto; height:auto; max-width:100%;
+    max-height: min(78vh, 1200px);
+    border-radius:10px; background:#000; object-fit:contain; margin-inline:auto;
+  }
   .meta{
     display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center;
     margin-top:10px; color:#999; font-size:13px;
@@ -101,7 +120,21 @@
     border:1px solid #2a2a2a; text-decoration:none; font-weight:800;
   }
   .ghost:hover{ border-color:#3a3a3a }
+
+  /* Hide the old ghost buttons once the real navbar is visible */
+  body.has-header .nav { display:none; }
 </style>
+
+<!-- Navbar (appears after reveal) -->
+<header id="siteHeader" aria-hidden="true">
+  <div class="brand"><img src="/assets/logo-red-wide.svg" alt="Bristol Bloods" /></div>
+  <nav>
+    <a id="navHome"   href="/">Home</a>
+    <a id="navKeep"   href="/keepers">Keepers</a>
+    <a id="navDraft"  href="/overview">Draft Order</a>
+    <a id="navReveal" href="/reveal/" hidden>Reveal Pick</a>
+  </nav>
+</header>
 
 <div class="wrap">
   <!-- Logo -->
@@ -129,10 +162,13 @@
 
   <!-- Image result -->
   <div id="result" class="card stack">
-    <img id="cardImg" alt="Draft reveal card" />
+    <div class="media">
+      <img id="cardImg" alt="Draft reveal card" />
+    </div>
     <div class="meta">
       <span id="stamp"></span>
-      <a id="canon" class="link" target="_blank" rel="noopener" style="display:none">Open image URL</a>    </div>
+      <a id="canon" class="link" target="_blank" rel="noopener" style="display:none">Open image URL</a>
+    </div>
     <div class="nav">
       <a class="ghost" href="/overview/">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-right:6px">
@@ -156,6 +192,27 @@
 <script>
   const API = "https://api.bristolbloods.com";
 
+  // Header helpers
+  const headerEl = document.getElementById('siteHeader');
+  function showHeader() {
+    headerEl.style.display = 'flex';               // show
+    headerEl.style.display = 'flex';               // ensure flex layout
+    headerEl.removeAttribute('aria-hidden');
+    const h = headerEl.offsetHeight || 0;
+    document.documentElement.style.setProperty('--head', h + 'px');
+    document.body.classList.add('has-header');
+
+    // after showing, wire nav (so sizes are final)
+    setupRevealTab();
+    setActiveNav();
+  }
+  addEventListener('resize', () => {
+    if (headerEl.style.display !== 'none') {
+      const h = headerEl.offsetHeight || 0;
+      document.documentElement.style.setProperty('--head', h + 'px');
+    }
+  });
+
   // --- DOM refs ---
   const qs        = new URLSearchParams(location.search);
   const rawName   = (qs.get("name") || "").trim();
@@ -172,12 +229,11 @@
   const canon     = document.getElementById('canon');
   const controls  = document.getElementById('controls');
   const subtitle  = document.querySelector('.sub');
-  
+
   // image decode hints
   imgEl.decoding = "async";
   imgEl.loading  = "eager";
 
-  // ---- Helpers ----
   function titleCaseName(raw) {
     return (raw || "").trim().toLowerCase().split(/\s+/).map(part =>
       part.split(/([-'])/).map(seg =>
@@ -191,7 +247,30 @@
     stamp.textContent = "Revealed " + dt.toLocaleString();
   }
 
-  // Person-specific & savage greetings
+  // Nav: reveal link + active tab
+  function setupRevealTab(){
+    const a = document.getElementById('navReveal');
+    if (!a) return;
+    if (name) {
+      a.href = `/reveal/?name=${encodeURIComponent(name)}`;
+      a.hidden = false;
+    } else if (location.pathname.startsWith('/reveal')) {
+      a.hidden = false;
+    }
+  }
+  function setActiveNav(){
+    const path = location.pathname.replace(/\/+$/,'');
+    const map = new Map([
+      ['','navHome'],
+      ['/keepers','navKeep'],
+      ['/draft','navDraft'],
+    ]);
+    let id = map.get(path) || null;
+    if (path.startsWith('/reveal')) id = 'navReveal';
+    document.querySelectorAll('header nav a[aria-current]').forEach(a => a.removeAttribute('aria-current'));
+    if (id) document.getElementById(id)?.setAttribute('aria-current','page');
+  }
+
   const PERSONAL_GREETINGS = {
     "james":  "{name}, ready to run it back?",
     "erica":  "{name}, who are you splitting the pot with this year?",
@@ -218,7 +297,6 @@
     return tpl.replaceAll("{name}", display || "Stranger");
   }
 
-  // Button blurbs (80% savage / 20% positive)
   const NEGATIVE_BUTTONS = [
     "Reveal my fate","Spin the wheel of shame","Show me my doom","Draft me dirty",
     "Let’s see the carnage","Unveil the humiliation","Deal me my pain","Destroy my hope",
@@ -237,7 +315,7 @@
     try {
       const res = await fetch(`${API}/state`, { cache: "no-store" });
       if (!res.ok) return { slot: null, revealedAt: null };
-      const rows = await res.json(); // [{name, slug, slot, imageUrl, revealedAt}]
+      const rows = await res.json();
       const slug = (name || "").trim().toLowerCase().replace(/\s+/g,'-');
       const me = rows.find(r => r.slug === slug);
       return { slot: me?.slot ?? null, revealedAt: me?.revealedAt ?? null };
@@ -245,7 +323,7 @@
       return { slot: null, revealedAt: null };
     }
   }
-  
+
   function critique(slot, displayName) {
     const n = displayName || "You";
     if (slot === 1)  return `${n}, pick #1 — enjoy it while it lasts. No excuses now.`;
@@ -257,22 +335,21 @@
     return `Pick #${slot} — enjoy the scraps, ${n}. Waiver wire is your new best friend.`;
   }
 
-  // --- Initial UI state: show greeting if we have a name ---
+  // --- Initial UI state
   const displayName = titleCaseName(name);
   if (name) {
-    greetEl.textContent = pickGreeting(name);
-    greetEl.hidden = false;          // visible before click
+    document.getElementById('greet').textContent = pickGreeting(name);
+    document.getElementById('greet').hidden = false;
   } else {
-    greetEl.hidden = true;
+    document.getElementById('greet').hidden = true;
   }
-  btn.textContent = pickButtonBlurb();
+  document.getElementById('revealBtn').textContent = pickButtonBlurb();
 
-  // Loading text that escalates
+  // Loading text escalator
   let _loadingTimers = [];
   function startLoading() {
     loading.style.display = "flex";
     loadingText.textContent = "Summoning your draft card…";
-  
     const steps = [
       [3000,  "Still working… greatness (or disaster) takes time."],
       [7000,  "AI is arguing with itself about how ugly you are."],
@@ -284,101 +361,64 @@
       [75000, "It’s painting every hair on your chin with Pixar precision."],
       [90000, "Okay fine, it’s taking forever. But hey—so will your rebuild."],
     ];
-  
     _loadingTimers = steps.map(([ms, msg]) =>
       setTimeout(() => (loadingText.textContent = msg.replace("{name}", titleCaseName(name))), ms)
     );
   }
-  
   function stopLoading() {
     loading.style.display = "none";
     _loadingTimers.forEach(clearTimeout);
     _loadingTimers = [];
   }
 
-  // No name? Send home.
+  // No name? Send home
   if (!name) {
-    btn.textContent = "Go back and type your name";
-    btn.onclick = () => { location.href = "/"; };
+    document.getElementById('revealBtn').textContent = "Go back and type your name";
+    document.getElementById('revealBtn').onclick = () => { location.href = "/"; };
   } else {
-    btn.onclick = () => {
-      btn.disabled = true;
-
-      // hide the whole controls row (button), show loader in its place
+    document.getElementById('revealBtn').onclick = () => {
+      document.getElementById('revealBtn').disabled = true;
       controls.style.display = 'none';
       loading.style.display = 'flex';
       startLoading();
-      
-      // keep logo & subtitle visible during loading; hide them only after the image paints
+
       if (logo) logo.style.display = '';
       if (subtitle) subtitle.style.display = '';
-      
       card.style.display = 'none';
       imgEl.hidden = true;
-      
-      // hide greeting while we load; we’ll replace it with critique after
       greetEl.hidden = true;
-
-      // // Attach handlers BEFORE setting src (avoid missing cached load)
-      // imgEl.onload = async () => {
-      //   stopLoading();
-      //   imgEl.hidden = false;
-      //   card.style.display = "block";   // override CSS display:none
-        
-      //   // now that image is painted, hide logo and subtitle
-      //   if (logo) logo.style.display = 'none';
-      //   if (subtitle) subtitle.style.display = 'none';
-        
-      //   // controls already hidden; keep them hidden after reveal
-      //   setStamp();
-
-      //   const slug = normalizeSlug(name);
-      //   const canonUrl = `${API}/image/${slug}.png`;
-      //   canon.href = canonUrl;
-      //   // leave textContent alone (link is hidden)
-        
-      //   const slot = await fetchSlotFor(name).catch(() => null);
-      //   greetEl.textContent = slot
-      //     ? critique(slot, displayName)
-      //     : "Revealed. If the pick sucks, blame latency.";
-      //   greetEl.hidden = false;         // show roast/praise
-      // };
 
       imgEl.onload = async () => {
         stopLoading();
         imgEl.hidden = false;
-        card.style.display = "block";   // override CSS display:none
-        
-        // now that image is painted, hide logo and subtitle
+        card.style.display = "block";
+
+        // Hide logo/subtitle so the image card is the focus
         if (logo) logo.style.display = 'none';
         if (subtitle) subtitle.style.display = 'none';
-        
-        // NEW: pull both slot and revealedAt from /state
+
+        // Show the navbar (with logo) and adjust layout; wire its links/active state
+        showHeader();
+
         const { slot, revealedAt } = await fetchSlotAndTime(name);
-      
-        // set the stamp using the true reveal time (falls back to now if missing)
         setStamp(revealedAt);
-      
         const displayName = titleCaseName(name);
         greetEl.textContent = slot
           ? critique(slot, displayName)
           : "Revealed. If the pick sucks, blame latency.";
-
         greetEl.hidden = false;
       };
 
       imgEl.onerror = () => {
         stopLoading();
         alert(`Could not load card for "${name}". Try again.`);
-        btn.disabled = false;
+        document.getElementById('revealBtn').disabled = false;
         if (logo) logo.style.display = '';
       };
 
-      // Trigger the load (cache-busted)
       imgEl.src = `${API}/reveal?name=${encodeURIComponent(name)}&cb=${Date.now()}`;
     };
 
-    // Autoplay supported
-    if (qs.get("autoplay") === "1") btn.click();
+    if (qs.get("autoplay") === "1") document.getElementById('revealBtn').click();
   }
 </script>
