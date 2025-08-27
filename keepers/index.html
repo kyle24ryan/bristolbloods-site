@@ -302,23 +302,28 @@ for (const t of TEAMS) {
   const el = document.createElement('article');
   el.className = 'card';
   el.innerHTML = `
-    <div class="owner">${t.firstName}</div>
+  <div class="owner">${t.firstName}</div>
 
-    <div class="players">
-      <div class="player">
-        <div class="avatar">${p1?.img ? <img src="${p1.img}" alt="${p1.name} headshot"> : ""}</div>
-        <div class="p-name">${p1?.name ?? "—"}</div>
-        <div class="p-pos">${p1?.pos ?? ""}</div>
+  <div class="players">
+    <div class="player">
+      <div class="avatar">
+        ${p1?.img ? `<img src="${p1.img}" alt="${p1.name} headshot" loading="lazy" decoding="async">` : ""}
       </div>
-      <div class="player">
-        <div class="avatar">${p2?.img ? <img src="${p2.img}" alt="${p2.name} headshot"> : ""}</div>
-        <div class="p-name">${p2?.name ?? "—"}</div>
-        <div class="p-pos">${p2?.pos ?? ""}</div>
-      </div>
+      <div class="p-name">${p1?.name ?? "—"}</div>
+      <div class="p-pos">${p1?.pos ?? ""}</div>
     </div>
 
-    <div class="team">${t.team}</div>
-  `;
+    <div class="player">
+      <div class="avatar">
+        ${p2?.img ? `<img src="${p2.img}" alt="${p2.name} headshot" loading="lazy" decoding="async">` : ""}
+      </div>
+      <div class="p-name">${p2?.name ?? "—"}</div>
+      <div class="p-pos">${p2?.pos ?? ""}</div>
+    </div>
+  </div>
+
+  <div class="team">${t.team}</div>
+`;
   grid.appendChild(el);
 }
 </script>
