@@ -307,6 +307,17 @@ const TEAMS = [
 
 /* RENDER ------------------------------------------------------------------ */
 TEAMS.sort((a,b) => a.firstName.localeCompare(b.firstName));
+  
+function getRound(keepStr) {
+  if (!keepStr) return Infinity;
+  const match = keepStr.match(/Rd\s+(\d+)/i);
+  return match ? parseInt(match[1], 10) : Infinity;
+}
+
+// sort each team's players array by round (ascending)
+TEAMS.forEach(team => {
+  team.players.sort((a, b) => getRound(a.keep) - getRound(b.keep));
+});
 
 const grid = document.getElementById('keepersGrid');
 
