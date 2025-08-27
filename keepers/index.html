@@ -158,7 +158,6 @@
     display: block;
   }
 
-
   .p-name{
     margin: 10px 0 2px;
     font-weight: 800; font-size: var(--t-player);
@@ -326,12 +325,12 @@ for (const t of TEAMS) {
 
     <div class="players">
       <div class="player">
-        <div class="avatar">${p1?.img ? `<img src="${p1.img}" alt="${p1.name} headshot">` : ""}</div>
+        <div class="avatar">${p1?.img ? <img src="${p1.img}" alt="${p1.name} headshot"> : ""}</div>
         <div class="p-name">${p1?.name ?? "—"}</div>
         <div class="p-pos">${p1?.pos ?? ""}</div>
       </div>
       <div class="player">
-        <div class="avatar">${p2?.img ? `<img src="${p2.img}" alt="${p2.name} headshot">` : ""}</div>
+        <div class="avatar">${p2?.img ? <img src="${p2.img}" alt="${p2.name} headshot"> : ""}</div>
         <div class="p-name">${p2?.name ?? "—"}</div>
         <div class="p-pos">${p2?.pos ?? ""}</div>
       </div>
