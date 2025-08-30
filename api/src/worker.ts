@@ -288,6 +288,29 @@ export default {
       });
     }
 
+    // POST /regenerate  { name }
+    // Re-renders the same manager's card (preserves slot), caps at 5 redos.
+    // Returns: { ok, remaining, slot } JSON (no image stream)
+    if (url.pathname === "/regenerate" && req.method === "POST") {
+      const name = await readName(req);
+      if (!name) return new Response("Missing name", { status: 400 });
+
+      const id   = env.LEAGUE.idFromName(LEAGUE_ID);
+      const stub = env.LEAGUE.get(id);
+
+      const r = await stub.fetch("https://internal/regenerate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name })
+      });
+
+      // Relay JSON with CORS
+      return withCORS(new Response(await r.text(), {
+        status: r.status,
+        headers: { "content-type": "application/json" }
+      }), req.headers.get("Origin"));
+    }
+
     // Tiny test form unchanged...
     if (url.pathname === "/" && req.method === "GET") {
       return html(`<!doctype html><meta charset="utf-8">
@@ -352,6 +375,45 @@ export class LeagueDO {
       })).sort((a,b)=>a.slot-b.slot);
 
       return json(list);
+    }
+
+    if (url.pathname === "/regenerate" && req.method === "POST") {
+      const { name } = await req.json() as { name: string };
+      const slug = normalize(name);
+
+      // Current state
+      const map   = (await this.state.storage.get<Record<string, number>>("map"))   || {};
+      const names = (await this.state.storage.get<Record<string, string>>("names")) || {};
+      const redos = (await this.state.storage.get<Record<string, number>>("redos")) || {};
+
+      // Must already have a slot (we're preserving it)
+      if (!(slug in map)) {
+        return json({ ok:false, error:"No slot yet for this manager" }, 409);
+      }
+
+      // Cap at 5
+      const used = redos[slug] ?? 0;
+      const MAX  = 5;
+      if (used >= MAX) {
+        return json({ ok:false, remaining:0, error:"Redo limit reached" }, 429);
+      }
+
+      const slot      = map[slug];
+      const firstName = names[slug] || name;
+
+      // 🔥 Generate a NEW image via OpenAI and overwrite R2
+      const key   = `${R2_PREFIX}${slug}.png`;
+      const b64   = await this.renderCard(slug, firstName, slot);        // <-- calls OpenAI (edits or generation)
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      await this.env.CARDS.put(key, bytes, {
+        httpMetadata: { contentType: "image/png" } // overwrite
+      });
+
+      // Increment redo counter and persist
+      redos[slug] = used + 1;
+      await this.state.storage.put("redos", redos);
+
+      return json({ ok:true, slot, remaining: MAX - redos[slug] });
     }
 
     if (url.pathname === "/assign" && req.method === "POST") {
