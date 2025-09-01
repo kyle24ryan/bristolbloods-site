@@ -1,7 +1,8 @@
 export interface Env {
   OPENAI_API_KEY: string;
   LEAGUE: DurableObjectNamespace;
-  CARDS: R2Bucket;             
+  CARDS: R2Bucket;  
+	DRAFT_ROOM: DurableObjectNamespace;
 }
 
 const LEAGUE_ID   = "bristol-bloods-2025";
