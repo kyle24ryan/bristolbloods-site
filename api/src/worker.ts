@@ -2,12 +2,19 @@ export interface Env {
   OPENAI_API_KEY: string;
   LEAGUE: DurableObjectNamespace;
   CARDS: R2Bucket;  
-	DRAFT_ROOM: DurableObjectNamespace;
+  DRAFT_ROOM: DurableObjectNamespace;
 }
 
 const LEAGUE_ID   = "bristol-bloods-2025";
 const LEAGUE_SIZE = 12;
 const R2_PREFIX   = `${LEAGUE_ID}/cards/`;
+const REPORT_ROOT_PREFIX = "bristol-bloods-2025";
+const REPORT_KEYS = {
+  inputs: (name: string) => `${REPORT_ROOT_PREFIX}/inputs/${name}`,
+  report: () => `${REPORT_ROOT_PREFIX}/report.json`,
+  reportCard: (teamSlug: string) => `${REPORT_ROOT_PREFIX}/cards/report/${teamSlug}.jpg`,
+  revealCard: (teamSlug: string) => `${REPORT_ROOT_PREFIX}/cards/reveal/${teamSlug}.jpg`, // existing
+};
 
 // Hosted on your GitHub Pages site (Step 1)
 const PERSONAS_URL = "https://bristolbloods.com/personas/personas.json";
@@ -220,6 +227,15 @@ export default {
 
     if (url.pathname === "/health") return new Response("ok");
 
+  // --- Report-card admin routes: /draft/:id/*
+  if (url.pathname.startsWith("/draft/")) {
+    const parts = url.pathname.split("/"); // ["", "draft", ":id", ...]
+    const draftId = parts[2] || "2025-bristol-bloods";
+    const id = env.DRAFT_ROOM.idFromName(draftId);
+    const stub = env.DRAFT_ROOM.get(id);
+    return stub.fetch(req);
+  }
+    
     // Serve a cached image directly from R2: /image/kyle.png or /image/kyle
     if (url.pathname.startsWith("/image/")) {
       const tail = url.pathname.replace("/image/", "");
@@ -322,6 +338,38 @@ export default {
     return new Response("Not found", { status: 404 });
   }
 };
+
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter(l => l.trim().length);
+  if (!lines.length) return { headers: [], rows: [] };
+  const headers = splitCSVLine(lines[0]);
+  const rows = lines.slice(1).map(line => {
+    const cells = splitCSVLine(line);
+    const obj: Record<string, string> = {};
+    headers.forEach((h, i) => obj[h.trim()] = (cells[i] ?? "").trim());
+    return obj;
+  });
+  return { headers, rows };
+}
+function splitCSVLine(line: string): string[] {
+  const out: string[] = []; let cur = ""; let q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (q && line[i+1] === '"') { cur += '"'; i++; } else { q = !q; } }
+    else if (ch === "," && !q) { out.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  out.push(cur);
+  return out;
+}
+
+const REQUIRED_MASTER_COLUMNS = ["Player","Team","Position","Proj FPTS","ADP","Value","Positional Scarcity","Risk Flags"];
+const REQUIRED_RESULTS_COLUMNS = ["Round","Pick","Overall","Player","NFL Team","Pos","Fantasy Team","Notes"];
+
+function hasColumns(headers: string[], required: string[]) {
+  const missing = required.filter(c => !headers.includes(c));
+  return { ok: missing.length === 0, missing };
+}
 
 // ---------------- Durable Object (stateful) ----------------
 export class LeagueDO {
@@ -550,3 +598,122 @@ function json(obj: unknown, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" }});
 }
 function html(s: string) { return new Response(s, { headers: { "content-type": "text/html" } }); }
+
+export class DraftRoom implements DurableObject {
+  constructor(private state: DurableObjectState, private env: Env) {}
+
+  async fetch(req: Request): Promise<Response> {
+    const url = new URL(req.url);
+    const path = url.pathname;
+
+    try {
+      if (path.endsWith("/upload-master") && req.method === "POST") {
+        return this.uploadCSV(req, "master_eval_2025.csv");
+      }
+      if (path.endsWith("/upload-results") && req.method === "POST") {
+        return this.uploadCSV(req, "draft_results.csv");
+      }
+      if (path.endsWith("/keepers") && req.method === "POST") {
+        return this.setKeepers(req);
+      }
+      if (path.endsWith("/aliases") && req.method === "POST") {
+        return this.saveAliases(req);
+      }
+      if (path.endsWith("/validate") && req.method === "POST") {
+        return this.validateAll();
+      }
+      if (path.endsWith("/report") && req.method === "GET") {
+        const obj = await this.env.CARDS.get(REPORT_KEYS.report());
+        if (!obj) return json({ status: "error", errors: [{ code: "NOT_FOUND", message: "report.json not found" }] }, 404);
+        return new Response(await obj.text(), { headers: { "content-type": "application/json" } });
+      }
+
+      // stubs for next milestones
+      if (path.endsWith("/preenrich") && req.method === "POST") {
+        return json({ status: "error", errors: [{ code: "NOT_READY", message: "Pre-enrich not implemented yet" }] }, 501);
+      }
+      if (path.endsWith("/generate") && req.method === "POST") {
+        return json({ status: "error", errors: [{ code: "NOT_READY", message: "OpenAI generate not implemented yet" }] }, 501);
+      }
+      if (path.endsWith("/avatars") && req.method === "POST") {
+        return json({ status: "error", errors: [{ code: "NOT_READY", message: "Avatar generation not implemented yet" }] }, 501);
+      }
+      if (path.endsWith("/publish") && req.method === "POST") {
+        return json({ status: "error", errors: [{ code: "NOT_READY", message: "Publish not implemented yet" }] }, 501);
+      }
+
+      return new Response("Not found", { status: 404 });
+    } catch (e: any) {
+      return json({ status: "error", errors: [{ code: "UNCAUGHT", message: String(e?.message || e) }] }, 500);
+    }
+  }
+
+  // ---------- uploads
+  private async uploadCSV(req: Request, filename: string): Promise<Response> {
+    const ctype = req.headers.get("content-type") || "";
+    if (!ctype.includes("multipart/form-data")) {
+      return json({ status: "error", errors: [{ code: "BAD_REQUEST", message: "Expected multipart/form-data" }] }, 400);
+    }
+    const form = await req.formData();
+    const file = form.get("file");
+    if (!(file instanceof File)) {
+      return json({ status: "error", errors: [{ code: "BAD_SCHEMA", message: "Missing form field 'file'" }] }, 400);
+    }
+    const raw = await file.text();
+    const { headers, rows } = parseCSV(raw);
+
+    const required = filename === "master_eval_2025.csv" ? REQUIRED_MASTER_COLUMNS : REQUIRED_RESULTS_COLUMNS;
+    const chk = hasColumns(headers, required);
+    if (!chk.ok) return json({ status: "error", errors: [{ code: "BAD_SCHEMA", message: `Missing columns: ${chk.missing.join(", ")}` }] }, 400);
+
+    await this.env.CARDS.put(REPORT_KEYS.inputs(filename), raw, { httpMetadata: { contentType: "text/csv" } });
+    await this.state.storage.put(filename, { headers, rowsCount: rows.length, ts: Date.now() });
+
+    return json({ status: "ok", rows: rows.length, columns: headers });
+  }
+
+  private async setKeepers(req: Request): Promise<Response> {
+    const body = await req.json().catch(() => null);
+    if (!body || !Array.isArray(body.keepers)) {
+      return json({ status: "error", errors: [{ code: "BAD_SCHEMA", message: "Expected { keepers: [...] }" }] }, 400);
+    }
+    // Compute overall if missing (12-team snake, for display)
+    for (const k of body.keepers) {
+      if (k.round == null || k.pick == null) {
+        return json({ status: "error", errors: [{ code: "BAD_SCHEMA", message: "Keeper missing 'round' or 'pick'" }] }, 400);
+      }
+      k.overall = k.overall ?? ((k.round - 1) * 12 + k.pick);
+    }
+    await this.state.storage.put("keepers.json", { keepers: body.keepers, ts: Date.now() });
+    await this.env.CARDS.put(REPORT_KEYS.inputs("keepers.json"), JSON.stringify({ keepers: body.keepers }, null, 2), { httpMetadata: { contentType: "application/json" } });
+    return json({ status: "ok", count: body.keepers.length });
+  }
+
+  private async saveAliases(req: Request): Promise<Response> {
+    const body = await req.json().catch(() => null);
+    if (!body || !Array.isArray(body.aliases)) {
+      return json({ status: "error", errors: [{ code: "BAD_SCHEMA", message: "Expected { aliases: [...] }" }] }, 400);
+    }
+    const existing = (await this.state.storage.get("aliases.json")) as any || { aliases: [] };
+    const merged = { aliases: [...existing.aliases, ...body.aliases], ts: Date.now() };
+    await this.state.storage.put("aliases.json", merged);
+    return json({ status: "ok", applied: body.aliases.length });
+  }
+
+  private async validateAll(): Promise<Response> {
+    const masterMeta = await this.state.storage.get("master_eval_2025.csv");
+    const resultsMeta = await this.state.storage.get("draft_results.csv");
+    const keepers = await this.state.storage.get("keepers.json");
+
+    const schema = { masterEval: !!masterMeta, draftResults: !!resultsMeta };
+    if (!schema.masterEval || !schema.draftResults) {
+      return json({ status: "error", errors: [{ code: "VALIDATION_BLOCKED", message: "Upload both Master Eval and Draft Results first." }] }, 400);
+    }
+    // Milestone 1: we’ll fill joins/sanity in the next step
+    const joins = { matched: 0, unmatched: 0, examples: [] as any[] };
+    const keeperStatus = { slotsOk: !!keepers, mappedCount: keepers ? (keepers as any).keepers?.length || 0 : 0 };
+    const sanity = { earlyDbTeams: [] as string[], qbHoarder: [] as string[], byeWeekHellCandidate: null as any };
+
+    return json({ status: "ok", schema, joins, keepers: keeperStatus, sanity });
+  }
+}
