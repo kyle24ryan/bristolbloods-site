@@ -1,10 +1,19 @@
 {
   "draftId": "2025-bristol-bloods",
+  "leagueName": "Bristol Bloods",
   "teamsCount": 12,
   "scoring": "PPR",
-  "starters": { "QB":1, "RB":2, "WR":2, "TE":1, "FLEX":1, "LB":1, "DL":1, "DB":1, "K":1 },
+  "starters": { "QB": 1, "RB": 2, "WR": 2, "TE": 1, "FLEX": 1, "LB": 1, "DL": 1, "DB": 1, "K": 1 },
   "bench": 9,
   "ir": 2,
-  "replacement": { "QB":14, "RB":30, "WR":30, "TE":14, "LB":14, "DL":14, "DB":14, "K":14 },
-  "draftMeta": { "type":"Snake", "dateISO":"2025-09-01T23:30:00Z", "timePerPickSec":60 }
+  "replacement": { "QB": 14, "RB": 30, "WR": 30, "TE": 14, "LB": 14, "DL": 14, "DB": 14, "K": 14 },
+  "draftMeta": {
+    "type": "Snake",
+    "dateISO": "2025-09-01T23:30:00Z",
+    "timePerPickSec": 60,
+    "platform": "ESPN"
+  },
+  "routing": {
+    "draftComplete": false
+  }
 }
