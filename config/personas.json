@@ -1,0 +1,80 @@
+{
+  "kyle": {
+    "teamName": "The Losing Edge",
+    "appearance": "Full beard, black-rim glasses, backwards cap; medium build; blue eyes.",
+    "motifs": ["Miami Dolphins color hint", "tiny cartoon silhouette detail (very faint)"],
+    "background": ["soft hills silhouette", "stadium light glow (subtle)"]
+  },
+  "amy": {
+    "teamName": "F My Fantasy Football Team",
+    "appearance": "Expressive eyes; playful energy; petite build.",
+    "motifs": ["Pacific Northwest nature hint", "dog/cat silhouettes", "leafy tree outlines", "screen glow texture"],
+    "background": ["misty forest shapes"]
+  },
+  "james": {
+    "teamName": "BAD NEWS FOR ERICA",
+    "appearance": "Bald with backwards hat; tattoos; punk-rock vibe; relaxed smirk.",
+    "motifs": ["guitar pick outline", "music note texture", "soccer ball outline", "abstract bolt pattern"],
+    "background": ["concert venue silhouettes"]
+  },
+  "jared": {
+    "teamName": "Cocktails and Dreams",
+    "appearance": "Confident, polished; stylish aesthetic.",
+    "motifs": ["cocktail glass glow", "luxury sneaker outline", "chip/coin silhouettes"],
+    "background": ["subtle city strip lights"]
+  },
+  "chino": {
+    "teamName": "Team Bad Luck",
+    "appearance": "Oversized tee, slight slouch, worried smirk.",
+    "motifs": ["fishing line motif", "soft smoke curl motif", "scattered neutral team-color circles"],
+    "background": ["stadium lights in distance"]
+  },
+  "justin": {
+    "teamName": "High Expectations",
+    "appearance": "Shaved head; relaxed posture; focused expression.",
+    "motifs": ["fishing rod outline", "boat silhouette", "DJ headphones outline", "hazy light beams"],
+    "background": ["club-style neon glow (abstract beams)"]
+  },
+  "kristyn": {
+    "teamName": "Flower Power",
+    "appearance": "Relaxed, friendly expression; retro 'flower power' vibe (tasteful).",
+    "motifs": ["small flower silhouettes", "leaf filigree pattern"],
+    "background": ["science lab silhouettes (beakers/flasks) very subtle"]
+  },
+  "ovi": {
+    "teamName": "Your Mom's Haus",
+    "appearance": "Lean build; casual posture; confident smirk; tattoos visible.",
+    "motifs": ["hot sauce bottle outline", "husky dog silhouette", "glowing laptop/code snippet texture", "generic bird silhouette"],
+    "background": ["stadium silhouette", "mountain ridge line"]
+  },
+  "erica": {
+    "teamName": "I DIGGS a CHUBB!!",
+    "appearance": "Sarcastic sideways smirk; playful but sharp vibe.",
+    "motifs": ["neutral blue/red color hint", "eye-roll emoji silhouette (minimal)"],
+    "background": ["subtle skyline silhouette"]
+  },
+  "tommy": {
+    "teamName": "PROJECT BADASS",
+    "appearance": "Beard; slicked-back medium hair; casual shirt; confident grin.",
+    "motifs": ["trophy icon outline", "scrubs pocket silhouette", "five small star icons"],
+    "background": ["medical monitor line (very faint)"]
+  },
+  "travis": {
+    "teamName": "Protein Balls",
+    "appearance": "Clean-cut; tuxedo with bow tie; confident model-like gaze.",
+    "motifs": ["luxury car silhouette", "blueprint line texture", "tiny 'girl dad' toy crown outline"],
+    "background": ["travel motif: airplane contrails, passport stamp textures (low contrast)"]
+  },
+  "mike": {
+    "teamName": "Hallin ass",
+    "appearance": "Strong, confident look with tight beard; focused but laid-back glare.",
+    "motifs": ["tattoo linework", "fedora/film noir silhouette"],
+    "background": ["NYC skyline hints", "generic ball stitching texture"]
+  },
+  "kristyn_alt": {
+    "teamName": "Flower Power 🌼",
+    "appearance": "Relaxed, friendly expression; retro flower-power vibe.",
+    "motifs": ["small flower silhouettes", "leaf filigree pattern"],
+    "background": ["science lab silhouettes (very subtle)"]
+  }
+}
