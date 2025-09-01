@@ -4,7 +4,7 @@
   "compatibility_date": "2024-11-01",
 
   "durable_objects": {
-    "bindings": [{ "name": "LEAGUE", "class_name": "LeagueDO" }]
+    "bindings": [{ "name": "LEAGUE", "class_name": "LeagueDO" }, { "name": "DRAFT_ROOM", "class_name": "DraftRoom" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LeagueDO"] }],
 
