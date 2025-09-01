@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bristolbloods.app/schemas/draft-report-v1.json",
+  "title": "Bristol Bloods Draft Report (Model Output)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "draftId", "generatedAt", "teams", "leagueAwards"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0.0" },
+    "draftId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "teams": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/TeamReport" }
+    },
+    "leagueAwards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deterministic", "vibe"],
+      "properties": {
+        "deterministic": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "bestDraft": { "$ref": "#/$defs/TeamAward" },
+            "stealOfDraft": { "$ref": "#/$defs/PickAward" },
+            "reachOfYear": { "$ref": "#/$defs/PickAward" },
+            "bestKeeperValue": { "$ref": "#/$defs/PickAward" },
+            "byeWeekHell": { "$ref": "#/$defs/ByeWeekAward" },
+            "bestLBGroup": { "$ref": "#/$defs/TeamAward" },
+            "bestDLGroup": { "$ref": "#/$defs/TeamAward" },
+            "bestSecondary": { "$ref": "#/$defs/TeamAward" },
+            "valueMerchant": { "$ref": "#/$defs/TeamAward" },
+            "mostBalancedRoster": { "$ref": "#/$defs/TeamAward" }
+          }
+        },
+        "vibe": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/VibeAward" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "Grade": {
+      "type": "string",
+      "enum": ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "F"]
+    },
+    "PickRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["player", "pos"],
+      "properties": {
+        "player": { "type": "string", "minLength": 1 },
+        "nfl": { "type": "string", "minLength": 1 },
+        "pos": { "type": "string", "minLength": 1 },
+        "team": { "type": "string" },
+        "round": { "type": "integer", "minimum": 1 },
+        "pick": { "type": "integer", "minimum": 1 },
+        "overall": { "type": "number", "minimum": 1 },
+        "adp": { "type": "number" },
+        "adpDelta": { "type": "number" },
+        "note": { "type": "string", "maxLength": 240 }
+      }
+    },
+    "Callouts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "steals": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/PickRef" } },
+        "reaches": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/PickRef" } },
+        "rosterFit": { "type": "string", "maxLength": 280 },
+        "riskNote": { "type": "string", "maxLength": 280 },
+        "idpNote": { "type": "string", "maxLength": 280 }
+      }
+    },
+    "TeamReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team", "offenseGrade", "idpGrade", "overallGrade", "strengths", "weaknesses", "verdict", "callouts"],
+      "properties": {
+        "team": { "type": "string", "minLength": 1 },
+        "offenseGrade": { "$ref": "#/$defs/Grade" },
+        "idpGrade": { "$ref": "#/$defs/Grade" },
+        "overallGrade": { "$ref": "#/$defs/Grade" },
+        "strengths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+        },
+        "weaknesses": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+        },
+        "verdict": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "badges": {
+          "type": "array",
+          "maxItems": 6,
+          "items": { "type": "string", "minLength": 1, "maxLength": 40 }
+        },
+        "callouts": { "$ref": "#/$defs/Callouts" }
+      }
+    },
+    "TeamAward": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team", "line"],
+      "properties": {
+        "team": { "type": "string", "minLength": 1 },
+        "line": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "PickAward": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team", "pick", "line"],
+      "properties": {
+        "team": { "type": "string", "minLength": 1 },
+        "pick": { "$ref": "#/$defs/PickRef" },
+        "line": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "ByeWeekAward": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team", "week", "count", "line"],
+      "properties": {
+        "team": { "type": "string", "minLength": 1 },
+        "week": { "type": "integer", "minimum": 1, "maximum": 18 },
+        "count": { "type": "integer", "minimum": 3 },
+        "line": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "VibeAward": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "title", "winnerTeam", "rationale"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "enum": ["uninspiredRoster", "starsAndScrubs", "riskBuffet", "tiltAward", "bestTrashTalkFuel"]
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "winnerTeam": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    }
+  }
+}
