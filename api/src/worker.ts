@@ -371,6 +371,28 @@ function hasColumns(headers: string[], required: string[]) {
   return { ok: missing.length === 0, missing };
 }
 
+// ------------------------
+// Settings & weights (defaults; can be overridden via request body)
+// ------------------------
+const DEFAULT_SETTINGS = {
+  teamsCount: 12,
+  starters: { QB:1, RB:2, WR:2, TE:1, FLEX:1, LB:1, DL:1, DB:1, K:1 },
+  replacement: { QB:14, RB:30, WR:30, TE:14, LB:14, DL:14, DB:14, K:14 }
+};
+const DEFAULT_WEIGHTS = {
+  grading: {
+    signalWeights: { projection: 0.35, scarcity: 0.30, adpDelta: 0.20, efficiency: 0.15 },
+    roundWeightCurve: { 1:1.0,2:0.95,3:0.9,4:0.85,5:0.8,6:0.75,7:0.7,8:0.65,9:0.6,10:0.55,11:0.5,12:0.45,13:0.4,14:0.35,15:0.3,16:0.25,17:0.2,18:0.15,19:0.1,20:0.05 },
+    posWeight: { QB:0.8, RB:1.2, WR:1.2, TE:1.0, FLEX:1.0, K:0.2, LB:0.6, DL:0.5, DB:0.4 },
+    idpCap: 4.0, idpDiscount: 0.5
+  },
+  risk: { injuryPenalty: -0.3, volatileAdpPenalty: -0.2 },
+  awards: { stealThreshold: -15, reachThreshold: 15 },
+  bands: { A:10.5, 'A-':9.5, 'B+':8.5, B:7.5, 'B-':6.5, 'C+':5.5, C:4.5, 'C-':3.5, 'D+':2.5, D:1.5, F:0 }
+};
+
+
+
 // ---------------- Durable Object (stateful) ----------------
 export class LeagueDO {
   state: DurableObjectState;
@@ -599,6 +621,39 @@ function json(obj: unknown, status = 200) {
 }
 function html(s: string) { return new Response(s, { headers: { "content-type": "text/html" } }); }
 
+// ------------------------
+// Utils: normalization, positions, percentiles
+// ------------------------
+function normName(s: string): string {
+  return (s||"")
+    .toLowerCase()
+    .replace(/\.(?=\s|$)/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/ jr$| sr$| iii$| ii$| iv$/g, "")
+    .trim();
+}
+function mapPos(p: string): string {
+  const x = (p||'').toUpperCase();
+  if (x === 'ILB' || x === 'OLB') return 'LB';
+  if (x === 'DE' || x === 'DT' || x === 'EDGE') return 'DL';
+  if (x === 'SS' || x === 'FS' || x === 'S' || x === 'CB') return 'DB';
+  return x;
+}
+function pct(arr: number[], q: number): number {
+  if (!arr.length) return 0;
+  const a = [...arr].sort((a,b)=>a-b);
+  const pos = (a.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (a[base+1] !== undefined) return a[base] + rest * (a[base+1] - a[base]);
+  return a[base];
+}
+function minmax(x: number, p1: number, p99: number): number {
+  if (p99 <= p1) return 0.5;
+  const v = Math.min(Math.max(x, p1), p99);
+  return (v - p1) / (p99 - p1);
+}
+
 export class DraftRoom implements DurableObject {
   constructor(private state: DurableObjectState, private env: Env) {}
 
@@ -622,6 +677,9 @@ export class DraftRoom implements DurableObject {
       if (path.endsWith("/validate") && req.method === "POST") {
         return this.validateAll();
       }
+      if (path.endsWith("/preenrich") && method === "POST") {
+        return this.preenrich(req);
+      }
       if (path.endsWith("/report") && req.method === "GET") {
         const obj = await this.env.CARDS.get(REPORT_KEYS.report());
         if (!obj) return json({ status: "error", errors: [{ code: "NOT_FOUND", message: "report.json not found" }] }, 404);
@@ -629,9 +687,6 @@ export class DraftRoom implements DurableObject {
       }
 
       // stubs for next milestones
-      if (path.endsWith("/preenrich") && req.method === "POST") {
-        return json({ status: "error", errors: [{ code: "NOT_READY", message: "Pre-enrich not implemented yet" }] }, 501);
-      }
       if (path.endsWith("/generate") && req.method === "POST") {
         return json({ status: "error", errors: [{ code: "NOT_READY", message: "OpenAI generate not implemented yet" }] }, 501);
       }
@@ -716,4 +771,244 @@ export class DraftRoom implements DurableObject {
 
     return json({ status: "ok", schema, joins, keepers: keeperStatus, sanity });
   }
+
+  private async preenrich(req: Request): Promise<Response> {
+    const body = await req.json().catch(() => ({}));
+    const settings = { ...DEFAULT_SETTINGS, ...(body?.settings || {}) };
+    const weights = deepMerge(DEFAULT_WEIGHTS, body?.weights || {});
+
+    // Load inputs from R2
+    const [masterObj, resultsObj] = await Promise.all([
+      this.env.CARDS.get(REPORT_KEYS.inputs("master_eval_2025.csv")),
+      this.env.CARDS.get(REPORT_KEYS.inputs("draft_results.csv"))
+    ]);
+    if (!masterObj || !resultsObj) return json({ status: "error", errors: [{ code: "NOT_READY", message: "Upload master_eval_2025.csv and draft_results.csv first" }] }, 400);
+
+    const masterTxt = await masterObj.text();
+    const resultsTxt = await resultsObj.text();
+
+    const master = parseCSV(masterTxt);
+    const results = parseCSV(resultsTxt);
+
+    // Build master index by (name,pos,team)
+    const masterIdx = new Map<string, any>();
+    for (const r of master.rows) {
+      const key = `${normName(r["Player"])}|${mapPos(r["Position"])||r["Position"]}|${(r["Team"]||"").toUpperCase()}`;
+      const proj = num(r["Proj FPTS"]);
+      const adp = num(r["ADP"]);
+      const val = num(r["Value"]);
+      const scarcity = num(r["Positional Scarcity"]);
+      const riskFlags = (r["Risk Flags"]||"").split(/;|,|\|/).map(s=>s.trim()).filter(Boolean);
+      masterIdx.set(key, { proj, adp, val, scarcity, riskFlags, nfl: (r["Team"]||"").toUpperCase(), pos: mapPos(r["Position"]) });
+    }
+
+    // Replacement baselines by position (from master proj)
+    const projByPos: Record<string, number[]> = {};
+    for (const r of master.rows) {
+      const p = mapPos(r["Position"]);
+      const pj = num(r["Proj FPTS"]);
+      if (!projByPos[p]) projByPos[p] = [];
+      projByPos[p].push(pj);
+    }
+    Object.keys(projByPos).forEach(p => projByPos[p].sort((a,b)=>b-a));
+    const rep: Record<string, number> = {};
+    for (const p of Object.keys(settings.replacement)) {
+      const rank = settings.replacement[p];
+      const arr = projByPos[p] || [];
+      rep[p] = arr[Math.min(rank-1, Math.max(0, arr.length-1))] || 0;
+    }
+
+    // Join results to master
+    type EnrichedPick = {
+      round: number; pick: number; overall: number; team: string; player: string; nfl: string; pos: string;
+      proj: number; adp: number; adpDelta: number; value: number; scarcity: number; risk: string[]; lane: 'OFF'|'IDP'; keeper: boolean;
+    };
+    const enriched: EnrichedPick[] = [];
+    const unmatched: any[] = [];
+
+    // Load keepers (to tag)
+    const keepers = (await this.state.storage.get("keepers.json")) as any || { keepers: [] };
+
+    for (const row of results.rows) {
+      const round = num(row["Round"]); const pick = num(row["Pick"]); const overall = num(row["Overall"]);
+      const player = row["Player"]; const nfl = (row["NFL Team"]||"").toUpperCase(); const pos = mapPos(row["Pos"]);
+      const team = row["Fantasy Team"]; const key = `${normName(player)}|${pos}|${nfl}`;
+      const m = masterIdx.get(key);
+      if (!m) { unmatched.push({ player, pos, nfl, team, round, pick, overall }); continue; }
+      const adp = isFiniteNum(m.adp) ? m.adp : synthADP(pos, overall);
+      const adpDelta = overall - adp;
+      const proj = m.proj;
+      const scarcity = Math.max(proj - (rep[pos] || 0), 0);
+      const value = adp > 0 ? proj / adp : 0;
+      const lane: 'OFF'|'IDP' = (pos === 'LB' || pos === 'DL' || pos === 'DB') ? 'IDP' : 'OFF';
+      const isKeeper = !!keepers.keepers?.some((k: any) => normName(k.player) === normName(player) && k.team === team);
+      enriched.push({ round, pick, overall, team, player, nfl, pos, proj, adp, adpDelta, value, scarcity, risk: m.riskFlags||[], lane, keeper: isKeeper });
+    }
+
+    // Percentile bands for signals
+    const projArr = enriched.map(e=>e.proj);
+    const scaArr = enriched.map(e=>e.scarcity);
+    const adpArr = enriched.map(e=>-e.adpDelta); // invert so value-positive is higher
+    const valArr = enriched.map(e=>e.value);
+    const p1 = { proj: pct(projArr, 0.01), sca: pct(scaArr, 0.01), adp: pct(adpArr, 0.01), val: pct(valArr, 0.01) };
+    const p99= { proj: pct(projArr, 0.99), sca: pct(scaArr, 0.99), adp: pct(adpArr, 0.99), val: pct(valArr, 0.99) };
+
+    // Score per pick
+    const sw = weights.grading.signalWeights;
+    function pickComposite(e: EnrichedPick): number {
+      const Sp = minmax(e.proj, p1.proj, p99.proj);
+      const Ss = minmax(e.scarcity, p1.sca, p99.sca);
+      const Sa = minmax(-e.adpDelta, p1.adp, p99.adp);
+      const Sv = minmax(e.value, p1.val, p99.val);
+      // risk penalties
+      const inj = e.risk.some(r => /q|inj|out|hamstring|ankle|knee/i.test(r)) ? (weights.risk.injuryPenalty||0) : 0;
+      const vol = e.risk.some(r => /vol/i.test(r)) ? (weights.risk.volatileAdpPenalty||0) : 0;
+      return sw.projection*Sp + sw.scarcity*Ss + sw.adpDelta*Sa + sw.efficiency*Sv + inj + vol;
+    }
+
+    function roundWeight(r: number): number { return (weights.grading.roundWeightCurve as any)[r] ?? 0.05; }
+    function posWeight(p: string): number { return (weights.grading.posWeight as any)[p] ?? 1.0; }
+
+    const perPickWeighted = enriched.map(e => ({ e, score: pickComposite(e) * roundWeight(e.round) * posWeight(e.pos) }));
+
+    // Aggregate per team
+    const byTeam = new Map<string, { picks: EnrichedPick[]; off:number; idp:number; }>();
+    for (const { e, score } of perPickWeighted) {
+      if (!byTeam.has(e.team)) byTeam.set(e.team, { picks: [], off:0, idp:0 });
+      const t = byTeam.get(e.team)!; t.picks.push(e);
+      if (e.lane === 'OFF') t.off += score; else t.idp += score;
+    }
+
+    function letter(x: number): string {
+      const b = weights.bands; // higher better
+      if (x >= b.A) return 'A'; if (x >= b['A-']) return 'A-'; if (x >= b['B+']) return 'B+'; if (x >= b.B) return 'B';
+      if (x >= b['B-']) return 'B-'; if (x >= b['C+']) return 'C+'; if (x >= b.C) return 'C'; if (x >= b['C-']) return 'C-';
+      if (x >= b['D+']) return 'D+'; if (x >= b.D) return 'D'; return 'F';
+    }
+
+    const teamsOut: any[] = [];
+    const allPicks: { team:string; pick: EnrichedPick }[] = [];
+
+    for (const [team, agg] of byTeam.entries()) {
+      const idpAdj = Math.min(agg.idp, weights.grading.idpCap) * weights.grading.idpDiscount;
+      const overall = agg.off + idpAdj;
+      const offenseGrade = letter(agg.off);
+      const idpGrade = letter(agg.idp);
+      const overallGrade = letter(overall);
+
+      // callouts (top 3 steals/reaches)
+      const steals = agg.picks
+        .filter(p=>isFiniteNum(p.adpDelta))
+        .sort((a,b)=> (a.adpDelta) - (b.adpDelta)) // most negative first
+        .slice(0,3)
+        .map(toPickRef(team));
+      const reaches = agg.picks
+        .filter(p=>isFiniteNum(p.adpDelta))
+        .sort((a,b)=> (b.adpDelta) - (a.adpDelta))
+        .slice(0,3)
+        .map(toPickRef(team));
+
+      // simple metrics
+      const posCounts = agg.picks.reduce((acc:any,p)=>{acc[p.pos]=(acc[p.pos]||0)+1; return acc;},{});
+      const meanAdpDelta = avg(agg.picks.map(p=>p.adpDelta).filter(isFiniteNum));
+      const sumValue = sum(agg.picks.map(p=>p.value));
+      const sumScarcity = sum(agg.picks.map(p=>p.scarcity));
+      const riskCount = sum(agg.picks.map(p=> (p.risk?.length||0) > 0 ? 1 : 0));
+
+      teamsOut.push({
+        team,
+        picks: agg.picks,
+        metrics: { posCounts, meanAdpDelta, sumValue, sumScarcity, riskCount, stacks: [], byeClumps: [] },
+        highlights: { steals, reaches, rosterFit: "", riskNote: "", idpNote: "" },
+        scores: { offense: round2(agg.off), idp: round2(agg.idp), overall: round2(overall) },
+        grades: { offense: offenseGrade, idp: idpGrade, overall: overallGrade }
+      });
+
+      for (const p of agg.picks) allPicks.push({ team, pick: p });
+    }
+
+    // League-level deterministic awards (basic set)
+    const allByDelta = allPicks.filter(x=>isFiniteNum(x.pick.adpDelta));
+    const stealCandidate = allByDelta.sort((a,b)=> (a.pick.adpDelta) - (b.pick.adpDelta))[0]?.let ?? null;
+
+    const stealPick = allByDelta.sort((a,b)=> (a.pick.adpDelta) - (b.pick.adpDelta))[0];
+    const reachPick = allByDelta.sort((a,b)=> (b.pick.adpDelta) - (a.pick.adpDelta))[0];
+
+    const leagueMetrics = {
+      biggestReachCandidate: reachPick ? { team: reachPick.team, pick: toPickRef(reachPick.team)(reachPick.pick) } : null,
+      stealCandidate: stealPick ? { team: stealPick.team, pick: toPickRef(stealPick.team)(stealPick.pick) } : null,
+      byeOverlapWorst: null,
+      qbHoarder: detectQBHoarders(teamsOut),
+      thinRB: detectThinRB(teamsOut),
+      earlyDB: detectEarlyDB(teamsOut)
+    } as any;
+
+    const resp = {
+      status: "ok",
+      summary: { teams: teamsOut.length, picks: enriched.length, unmatched: unmatched.length },
+      unmatched,
+      leagueMetrics,
+      teams: teamsOut
+    };
+    return json(resp);
+  }
+}
+
+// ------------------------
+// Small helpers (math, refs, detectors)
+// ------------------------
+function num(x: any): number { const n = Number(String(x).replace(/,/g, '')); return isNaN(n) ? 0 : n; }
+function isFiniteNum(x:any){ return typeof x === 'number' && isFinite(x); }
+function sum(a:number[]){ return a.reduce((s,v)=>s+(isFinite(v)?v:0),0); }
+function avg(a:number[]){ return a.length ? sum(a)/a.length : 0; }
+function round2(x:number){ return Math.round(x*100)/100; }
+
+function deepMerge<T>(base:T, over:any): T {
+  if (!over) return base;
+  const out: any = Array.isArray(base) ? [...(base as any)] : { ...(base as any) };
+  for (const k of Object.keys(over)) {
+    const v = (over as any)[k];
+    if (v && typeof v === 'object' && !Array.isArray(v)) out[k] = deepMerge((out as any)[k], v);
+    else out[k] = v;
+  }
+  return out;
+}
+
+function synthADP(pos: string, overall: number): number {
+  // very light synthetic ADP if missing (IDP often missing). Bias to overall pick if present.
+  const base = overall || 200;
+  const bump = ({ LB: 140, DL: 160, DB: 170, K: 180 } as any)[pos] || 150;
+  return base + bump * 0.1; // gentle nudge so deltas still meaningful
+}
+
+function toPickRef(team: string) {
+  return (p: any) => ({ player: p.player, nfl: p.nfl, pos: p.pos, team, round: p.round, pick: p.pick, overall: p.overall, adp: p.adp, adpDelta: p.adpDelta });
+}
+
+function detectQBHoarders(teams: any[]): string[] {
+  const out: string[] = [];
+  for (const t of teams) {
+    const qbs = t.picks.filter((p:any)=>p.pos==='QB');
+    const early = qbs.filter((p:any)=>p.round <= 10);
+    if (qbs.length >= 3 && early.length >= 2) out.push(t.team);
+  }
+  return out;
+}
+function detectThinRB(teams: any[]): string[] {
+  const out: string[] = [];
+  for (const t of teams) {
+    const rbs = t.picks.filter((p:any)=>p.pos==='RB');
+    const startersFilledBy8 = rbs.filter((p:any)=>p.round <= 8).length >= 2; // needs 2 starters
+    const depthBy12 = rbs.filter((p:any)=>p.round <= 12).length >= 3; // at least 1 depth behind
+    if (!startersFilledBy8 || !depthBy12) out.push(t.team);
+  }
+  return out;
+}
+function detectEarlyDB(teams: any[]): string[] {
+  const out: string[] = [];
+  for (const t of teams) {
+    const firstIDP = t.picks.filter((p:any)=>p.pos==='LB'||p.pos==='DL'||p.pos==='DB').sort((a:any,b:any)=>a.overall-b.overall)[0];
+    if (firstIDP && firstIDP.pos==='DB') out.push(t.team);
+  }
+  return out;
 }
