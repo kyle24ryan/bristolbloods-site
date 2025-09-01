@@ -6,7 +6,10 @@
   "durable_objects": {
     "bindings": [{ "name": "LEAGUE", "class_name": "LeagueDO" }, { "name": "DRAFT_ROOM", "class_name": "DraftRoom" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LeagueDO"] }],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LeagueDO"] }, {
+      "tag": "2025-08-31-draftroom",   
+      "new_sqlite_classes": ["DraftRoom"]    
+    }],
 
   "r2_buckets": [
     { "binding": "CARDS", "bucket_name": "bristol-bloods" }
