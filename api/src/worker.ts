@@ -303,6 +303,18 @@ export default {
       }), req.headers.get("Origin"));
     }
 
+		if (url.pathname.startsWith("/draft/")) {
+      // Route to your Durable Object, then add CORS on the way out
+      const idPart = url.pathname.split("/")[2] || "default";
+      const id = env.DRAFT_ROOM.idFromName(idPart);
+      const stub = env.DRAFT_ROOM.get(id);
+      const r = await stub.fetch(req);
+			return withCORS(new Response(await r.text(), {
+        status: r.status,
+        headers: { "content-type": "application/json" }
+      }), req.headers.get("Origin"));
+    }
+
     if (url.pathname === "/reveal") {
       const name = await readName(req);
       if (!name) return new Response("Missing name", { status: 400 });
