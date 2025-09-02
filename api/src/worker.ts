@@ -151,6 +151,20 @@ const PERSONAS: Record<string, Persona> = {
   },
 };
 
+const GRADE_FACE: Record<string, string> = {
+  "A": "confident grin",
+  "A-": "confident grin",
+  "B+": "subtle smirk",
+  "B": "subtle smirk",
+  "B-": "subtle smirk",
+  "C+": "neutral with faint worry",
+  "C": "neutral with faint worry",
+  "C-": "neutral with faint worry",
+  "D+": "tight grimace",
+  "D": "tight grimace",
+  "F": "comedic shock, wide eyes"
+};
+
 // Compose final prompt from global rules + persona
 function buildPixarPrompt(slug: string, firstName: string, slot: number): string {
   const p = PERSONAS[slug];
@@ -203,6 +217,34 @@ function withCORS(resp: Response, origin: string | null) {
     h.append("Vary", "Origin");
   }
   return new Response(resp.body, { status: resp.status, headers: h });
+}
+
+
+// ------------------------
+// Helper: prompt builder for portrait-only report cards (no text baked in)
+// ------------------------
+function buildAvatarPrompt(opts: { firstName: string; teamName: string; appearance: string; motifs?: string[]; background?: string[]; face: string; }): string {
+  const motifs = (opts.motifs||[]).slice(0,4).join(", ");
+  const bg = (opts.background||[]).slice(0,2).join(", ");
+  return [
+    "Pixar Toy Story style 3D cartoon portrait, glossy, colorful, high detail.",
+    "Square 1024x1024 poster, matte black background with faint fabric texture.",
+    `Facial expression: ${opts.face}.`,
+    `Subject: ${opts.appearance}. Centered portrait, clean negative space, no text, no numbers, no watermarks.`,
+    motifs ? `Subtle monochrome background motifs: ${motifs}. (10-20% opacity)` : "",
+    bg ? `Scene hints (very subtle): ${bg}.` : "",
+    "Strict: Do not render any text, team logos, or jersey numbers. Portrait only."
+  ].filter(Boolean).join("\n");
+}
+
+function teamSlug(name: string): string { return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
+
+function b64ToUint8Array(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
 }
 
 // ---------------- Worker (HTTP edge) ----------------
@@ -686,17 +728,15 @@ export class DraftRoom implements DurableObject {
         return new Response(await obj.text(), { headers: { "content-type": "application/json" } });
       }
 
-      // stubs for next milestones
-      if (path.endsWith("/generate") && req.method === "POST") {
-        return json({ status: "error", errors: [{ code: "NOT_READY", message: "OpenAI generate not implemented yet" }] }, 501);
+      if (pathname.endsWith("/generate") && method === "POST") {
+        return this.generate(req);
       }
-      if (path.endsWith("/avatars") && req.method === "POST") {
-        return json({ status: "error", errors: [{ code: "NOT_READY", message: "Avatar generation not implemented yet" }] }, 501);
+      if (path.endsWith("/avatars") && method === "POST") {
+        return this.avatars(req);
       }
-      if (path.endsWith("/publish") && req.method === "POST") {
-        return json({ status: "error", errors: [{ code: "NOT_READY", message: "Publish not implemented yet" }] }, 501);
+      if (path.endsWith("/publish") && method === "POST") {
+        return this.publish(req);
       }
-
       return new Response("Not found", { status: 404 });
     } catch (e: any) {
       return json({ status: "error", errors: [{ code: "UNCAUGHT", message: String(e?.message || e) }] }, 500);
@@ -950,7 +990,177 @@ export class DraftRoom implements DurableObject {
       leagueMetrics,
       teams: teamsOut
     };
+    await this.state.storage.put("_preenrich_cache", resp);
     return json(resp);
+  }
+
+  private async generate(req: Request): Promise<Response> {
+    // 1) Ensure preenrich exists — if you didn’t persist it, re-run the logic here
+    const pre = await this.runPreenrichSnapshot();
+    if (pre.status !== "ok") return json(pre, 400);
+
+    // 2) Build compact payload for the model (don’t send full 240 picks)
+    const compact = buildCompactPayload(pre);
+
+    // 3) Compose system+user prompts
+    const sys = SYSTEM_PROMPT();
+    const user = USER_PROMPT(compact);
+
+    // 4) Call OpenAI (Chat Completions JSON mode for reliability)
+    const endpoint = "https://api.openai.com/v1/chat/completions";
+    const body = {
+      model: "gpt-4o-mini",          // pick a fast JSON-capable model
+      temperature: 0.6,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: user }
+      ]
+    } as const;
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "authorization": `Bearer ${this.env.OPENAI_API_KEY}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const t = await res.text();
+      return json({ status: "error", errors: [{ code: "OPENAI_ERROR", message: t }] }, 502);
+    }
+
+    const out = await res.json();
+    const content = out.choices?.[0]?.message?.content || "{}";
+
+    let obj: any;
+    try { obj = JSON.parse(content); } catch (e) {
+      return json({ status: "error", errors: [{ code: "SCHEMA_VALIDATION_FAILED", message: "Model did not return valid JSON" }] }, 422);
+    }
+
+    // 5) Light validation (top-level keys)
+    const missing = requiredTopLevelKeys.filter(k => !(k in obj));
+    if (missing.length) {
+      return json({ status: "error", errors: [{ code: "SCHEMA_VALIDATION_FAILED", message: `Missing keys: ${missing.join(", ")}` }], modelOutputRaw: obj }, 422);
+    }
+
+    // Ensure version/draftId/timestamp
+    obj.version = obj.version || "1.0.0";
+    obj.draftId = obj.draftId || compact.draftId;
+    obj.generatedAt = obj.generatedAt || new Date().toISOString();
+
+    // 6) Cache in DO and (optionally) persist to R2 when you publish later
+    await this.state.storage.put("modelOutput.json", obj);
+
+    return json({ status: "ok", validated: true, modelOutput: obj });
+  }
+
+  // ------------------------
+  // Helpers (preenrich snapshot)
+  // ------------------------
+  private async runPreenrichSnapshot(): Promise<any> {
+    // If you persisted your preenrich output to storage in M2, you can read it here.
+    // For now, we recompute by loading CSVs and running the same joins as in M2.
+    const [masterObj, resultsObj] = await Promise.all([
+      this.env.CARDS.get(`${REPORT_ROOT_PREFIX}/inputs/master_eval_2025.csv`),
+      this.env.CARDS.get(`${REPORT_ROOT_PREFIX}/inputs/draft_results.csv`)
+    ]);
+    if (!masterObj || !resultsObj) return { status: "error", errors: [{ code: "NOT_READY", message: "Upload master_eval_2025.csv and draft_results.csv first" }] };
+
+    // You should replace the next line with a call to your actual preenrich implementation
+    // (e.g., this.preenrichInternal()) and return its JSON.
+    return await this.state.storage.get("_preenrich_cache") || { status: "error", errors: [{ code: "NOT_READY", message: "Pre-enrich cache not present — wire preenrich to persist a snapshot" }] };
+  }
+
+  private async avatars(req: Request): Promise<Response> {
+    const body = await req.json().catch(() => ({} as any));
+    const personas: typeof PERSONAS = body?.personasOverride || PERSONAS;
+    const faceMap: Record<string,string> = body?.gradeFaces || GRADE_FACE;
+
+    // Prefer modelOutput grades; fall back to preenrich snapshot
+    const model = (await this.state.storage.get("modelOutput.json")) as any;
+    const pre = (await this.state.storage.get("_preenrich_cache")) as any;
+    const source = model?.teams?.length ? { type: "model", teams: model.teams } : pre?.teams?.length ? { type: "pre", teams: pre.teams } : null;
+    if (!source) return json({ status: "error", errors: [{ code: "NOT_READY", message: "Run /preenrich (or /generate) first" }] }, 400);
+
+    const missing: string[] = [];
+    const written: string[] = [];
+    for (const t of source.teams) {
+      const teamName: string = t.team || t.name || "";
+      if (!teamName) continue;
+      const slug = teamSlug(teamName);
+      const grade: string = (t.grades?.overall || t.overallGrade || t.grade || "C").toString();
+
+      // find persona by team name (case-insensitive contains) or by firstName hint
+      const personaKey = Object.keys(personas).find(k => personas[k].teamName.toLowerCase() === teamName.toLowerCase());
+      const persona = personaKey ? personas[personaKey] : null;
+      if (!persona) { missing.push(teamName); continue; }
+
+      const face = faceMap[grade] || "neutral";
+      const prompt = buildAvatarPrompt({
+        firstName: "",
+        teamName: teamName,
+        appearance: persona.appearance,
+        motifs: persona.motifs,
+        background: persona.background,
+        face
+      });
+
+      // Call OpenAI Images API — gpt-image-1 (JSON: base64)
+      const res = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: { "authorization": `Bearer ${this.env.OPENAI_API_KEY}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "gpt-image-1",
+          prompt,
+          size: "1024x1024",
+          n: 1,
+          response_format: "b64_json"
+        })
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        return json({ status: "error", errors: [{ code: "OPENAI_ERROR", message: txt }] }, 502);
+      }
+      const data = await res.json();
+      const b64 = data?.data?.[0]?.b64_json;
+      if (!b64) {
+        return json({ status: "error", errors: [{ code: "OPENAI_ERROR", message: "No image payload in response" }] }, 502);
+      }
+      const bytes = b64ToUint8Array(b64);
+      await this.env.CARDS.put(REPORT_KEYS.reportCard(slug), bytes, { httpMetadata: { contentType: "image/jpeg" } });
+      written.push(REPORT_KEYS.reportCard(slug));
+    }
+
+    return json({ status: "ok", written, missingPersonas: missing });
+  }
+
+  // ------------------------
+  // /publish — persist model output to R2 and verify all cards exist
+  // ------------------------
+  private async publish(req: Request): Promise<Response> {
+    const model = (await this.state.storage.get("modelOutput.json")) as any;
+    if (!model?.teams?.length) return json({ status: "error", errors: [{ code: "NOT_READY", message: "Run /generate first" }] }, 400);
+
+    // verify portraits
+    const missing: string[] = [];
+    for (const t of model.teams) {
+      const teamName: string = t.team || t.name || "";
+      const slug = teamSlug(teamName);
+      const head = await this.env.CARDS.head(REPORT_KEYS.reportCard(slug));
+      if (!head) missing.push(teamName);
+    }
+
+    if (missing.length) {
+      return json({ status: "error", errors: [{ code: "AVATAR_GEN_FAILED", message: `Missing portraits for: ${missing.join(", ")}` }], missing }, 409);
+    }
+
+    // write report.json
+    await this.env.CARDS.put(REPORT_KEYS.report(), JSON.stringify(model, null, 2), { httpMetadata: { contentType: "application/json" } });
+
+    return json({ status: "ok", published: true, teams: model.teams.length, reportKey: REPORT_KEYS.report() });
   }
 }
 
@@ -1011,4 +1221,76 @@ function detectEarlyDB(teams: any[]): string[] {
     if (firstIDP && firstIDP.pos==='DB') out.push(t.team);
   }
   return out;
+}
+
+// ------------------------
+// Prompt builders
+// ------------------------
+const requiredTopLevelKeys = ["version","draftId","generatedAt","teams","leagueAwards"] as const;
+
+function SYSTEM_PROMPT(): string {
+  return `You are generating a fantasy football draft report for the Bristol Bloods league.\n\nRules:\n- Do NOT change numeric grades. The numeric scores and letter grades are already computed.\n- Critique strategy and roster construction, not people. Keep roasts fun but not personal.\n- Keep outputs succinct and punchy.\n- Output JSON only. No prose outside of JSON.\n- Respect the provided JSON keys exactly. No extra keys.\n- If something is unclear, be conservative and avoid hallucinating specifics.\n`;
+}
+
+function USER_PROMPT(compact: CompactPayload): string {
+  return JSON.stringify({
+    instruction: "Produce the final report JSON. Use grades as given. Fill in strengths, weaknesses, verdict, and vibe awards succinctly.",
+    schemaShapeHint: {
+      version: "1.0.0",
+      draftId: compact.draftId,
+      generatedAt: "<iso string>",
+      teams: "TeamReport[]",
+      leagueAwards: { deterministic: "object", vibe: "array" }
+    },
+    league: {
+      draftId: compact.draftId,
+      settings: compact.settings
+    },
+    inputs: {
+      teams: compact.teams,            // contains team name, grades, highlights, brief metrics
+      candidates: compact.candidates   // deterministic award candidates
+    }
+  });
+}
+
+// ------------------------
+// Compact payload shape
+// ------------------------
+export type CompactPayload = {
+  draftId: string;
+  settings: any;
+  teams: Array<{
+    team: string;
+    grades: { offense: string; idp: string; overall: string };
+    scores: { offense: number; idp: number; overall: number };
+    highlights: { steals: any[]; reaches: any[] };
+    metrics: { posCounts: Record<string, number>; meanAdpDelta: number; riskCount: number };
+  }>;
+  candidates: any;
+};
+
+// Example builder — adapt to your M2 shape
+function buildCompactPayload(pre: any): CompactPayload {
+  const draftId = "2025-bristol-bloods";
+  const teams = (pre.teams || []).map((t: any) => ({
+    team: t.team,
+    grades: t.grades,
+    scores: t.scores,
+    highlights: { steals: (t.highlights?.steals||[]), reaches: (t.highlights?.reaches||[]) },
+    metrics: {
+      posCounts: t.metrics?.posCounts || {},
+      meanAdpDelta: t.metrics?.meanAdpDelta ?? 0,
+      riskCount: t.metrics?.riskCount ?? 0
+    }
+  }));
+  return {
+    draftId,
+    settings: {
+      scoring: "PPR",
+      starters: { QB:1, RB:2, WR:2, TE:1, FLEX:1, LB:1, DL:1, DB:1, K:1 },
+      bench: 9
+    },
+    teams,
+    candidates: pre.leagueMetrics || {}
+  };
 }
