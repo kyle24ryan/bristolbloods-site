@@ -22,7 +22,7 @@ import React, { useEffect, useState } from "react";
  */
 
 const DRAFT_ID = "2025-bristol-bloods";
-const API_BASE = ""; // same-origin; change if you host API separately
+const API_BASE = "https://api.bristolbloods.com"; // same-origin; change if you host API separately
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState<TabKey>("upload");
