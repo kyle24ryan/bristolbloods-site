@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 /**
  * Bristol Bloods – Admin Dashboard (single-file React component)
@@ -245,7 +245,7 @@ export default function AdminDashboard() {
         <div className="pre h-48 overflow-auto">{logs.join("\n")}</div>
       </section>
 
-      <style jsx>{`
+      <style>{`
         .btn { background:#111827; border:1px solid #1f2937; padding:.5rem .75rem; border-radius:.5rem; }
         .btn:hover { background:#0b1220; }
         .hint { color:#9ca3af; font-size:.85rem; margin-top:.5rem; }
@@ -279,7 +279,7 @@ function LeagueGrid({ report }: { report: any }) {
             </div>
             <span className={`grade-${(t.overallGrade||t.grades?.overall||"C").replace("+","p").replace("-","m")}`}>{t.overallGrade || t.grades?.overall}</span>
           </div>
-          <style jsx>{`
+          <style>{`
             .grade-A, .grade-Ap, .grade-Am { background:#065f46; }
             .grade-B, .grade-Bp, .grade-Bm { background:#1d4ed8; }
             .grade-C, .grade-Cp, .grade-Cm { background:#92400e; }
