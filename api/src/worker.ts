@@ -271,14 +271,18 @@ export default {
 
     if (url.pathname === "/health") return new Response("ok");
 
-  // --- Report-card admin routes: /draft/:id/*
-  if (url.pathname.startsWith("/draft/")) {
-    const parts = url.pathname.split("/"); // ["", "draft", ":id", ...]
-    const draftId = parts[2] || "2025-bristol-bloods";
-    const id = env.DRAFT_ROOM.idFromName(draftId);
-    const stub = env.DRAFT_ROOM.get(id);
-    return stub.fetch(req);
-  }
+    // --- Report-card admin routes: /draft/:id/*
+    if (url.pathname.startsWith("/draft/")) {
+	  const parts = url.pathname.split("/"); // ["", "draft", ":id", ...]
+	  const draftId = parts[2] || "2025-bristol-bloods";
+	  const id = env.DRAFT_ROOM.idFromName(draftId);
+	  const stub = env.DRAFT_ROOM.get(id);
+	  const r = await stub.fetch(req);
+	  return withCORS(new Response(await r.text(), {
+        status: r.status,
+        headers: { "content-type": "application/json" }
+      }), req.headers.get("Origin"));
+    }
     
     // Serve a cached image directly from R2: /image/kyle.png or /image/kyle
     if (url.pathname.startsWith("/image/")) {
@@ -300,18 +304,6 @@ export default {
       const stub = env.LEAGUE.get(id);
       const r = await stub.fetch("https://internal/state");
       return withCORS(new Response(await r.text(), {
-        status: r.status,
-        headers: { "content-type": "application/json" }
-      }), req.headers.get("Origin"));
-    }
-
-		if (url.pathname.startsWith("/draft/")) {
-      // Route to your Durable Object, then add CORS on the way out
-      const idPart = url.pathname.split("/")[2] || "default";
-      const id = env.DRAFT_ROOM.idFromName(idPart);
-      const stub = env.DRAFT_ROOM.get(id);
-      const r = await stub.fetch(req);
-			return withCORS(new Response(await r.text(), {
         status: r.status,
         headers: { "content-type": "application/json" }
       }), req.headers.get("Origin"));
