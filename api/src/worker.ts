@@ -257,8 +257,8 @@ export default {
     if (req.method === "OPTIONS") {
       const origin = req.headers.get("Origin");
       const h = new Headers({
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Access-Control-Max-Age": "86400",
       });
       if (origin && ALLOWED_ORIGINS.has(origin)) {
