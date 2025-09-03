@@ -208,6 +208,8 @@ Keep likeness if base photo provided.
 const ALLOWED_ORIGINS = new Set([
   "https://bristolbloods.com",
   "https://www.bristolbloods.com",
+  "https://bristolbloods-site.pages.dev",
+  "https://api.bristolbloods.com"	
 ]);
 
 function withCORS(resp: Response, origin: string | null) {
