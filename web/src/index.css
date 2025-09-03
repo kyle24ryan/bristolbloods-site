@@ -2,5 +2,7 @@
 @source "./index.html";
 @source "./src/**/*.{ts,tsx}";
 
+/* tiny reset */
 :root { color-scheme: dark; }
 html, body, #root { height: 100%; }
+body { margin: 0; }

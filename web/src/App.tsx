@@ -4,10 +4,12 @@ import AdminDashboard from "@/components/AdminDashboard";
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-      </Routes>
+      <div className="min-h-screen bg-neutral-950 text-neutral-100">
+        <Routes>
+          <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }
