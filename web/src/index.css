@@ -1,9 +1,6 @@
 @import "tailwindcss";
-
-/* (optional but recommended) Tell Tailwind where to scan for classes */
 @source "./index.html";
 @source "./src/**/*.{ts,tsx}";
 
-/* (optional) Dark base + font smoothing */
 :root { color-scheme: dark; }
 html, body, #root { height: 100%; }
