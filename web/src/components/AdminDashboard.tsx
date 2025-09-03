@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
  * Otherwise point at your Worker (and be sure CORS is enabled):
  *   const API_BASE = "https://api.bristolbloods.com";
  */
-const API_BASE = ""; // same-origin recommended
+const API_BASE = "https://api.bristolbloods.com";
 const DRAFT_ID = "2025-bristol-bloods";
 
 type TabKey = "upload" | "validate" | "generate" | "preview";
