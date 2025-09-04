@@ -493,41 +493,72 @@ function Uploader({
 }
 
 function LeagueGrid({ data }: { data: any }) {
+  // The published shape is { version, draftId, generatedAt, teams: [...] }
+  const generatedAt: string | undefined = data?.generatedAt;
   const teams: any[] = data?.teams || data?.modelOutput?.teams || [];
-  if (!Array.isArray(teams) || teams.length === 0) return <EmptyState title="No teams in report" />;
+  if (!Array.isArray(teams) || teams.length === 0) {
+    return <EmptyState title="No teams in report" />;
+  }
 
   return (
     <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
       {teams.map((t, i) => {
-        const letter = (t.grade || t.letter || "–") as string;
-        const badge = letter[0];
+        const teamName = t.team || t.teamName || t.name || "—";
+        const letter: string =
+          (t.grades?.overall as string) ||
+          (t.grade as string) ||
+          (t.letter as string) ||
+          "–";
+
+        const badge = (letter || "–")[0];
         const tone =
           badge === "A" ? "bg-emerald-700/25 text-emerald-200 border-emerald-800/60" :
           badge === "B" ? "bg-sky-700/25 text-sky-200 border-sky-800/60" :
           badge === "C" ? "bg-amber-700/25 text-amber-200 border-amber-800/60" :
           "bg-rose-800/30 text-rose-200 border-rose-900/60";
 
-      return (
-        <div key={i} className="rounded-xl overflow-hidden border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-900 transition">
-          <div className="aspect-[16/9] bg-neutral-800/50 flex items-center justify-center">
-            {t.cardUrl ? (
-              <img src={t.cardUrl} alt={t.teamName} className="w-full h-full object-cover" loading="lazy" />
-            ) : (
-              <div className="text-neutral-400 text-sm">No card image</div>
-            )}
-          </div>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold">{t.teamName || t.name}</h4>
-                <p className="text-xs text-neutral-400">{t.owner || t.firstName || ""}</p>
-              </div>
-              <span className={cx("px-2.5 py-1 rounded-full text-xs border font-semibold", tone)}>{letter}</span>
+        const summary =
+          t.verdict ||
+          t.summary ||
+          (t.strengths && t.weaknesses
+            ? `+ ${t.strengths} · – ${t.weaknesses}`
+            : t.strengths || t.weaknesses || "—");
+
+        const src = reportCardUrl(teamName, generatedAt);
+
+        return (
+          <div key={i} className="rounded-xl overflow-hidden border border-neutral-800 bg-neutral-900/50 hover:bg-neutral-900 transition">
+            <div className="aspect-[16/9] bg-neutral-800/50">
+              <img
+                src={src}
+                alt={teamName}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = IMG_FALLBACK;
+                }}
+              />
             </div>
-            <p className="text-sm text-neutral-300 mt-2 line-clamp-3">{t.summary || t.summaryShort || "—"}</p>
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold">{teamName}</h4>
+                  {/* Keep owner/firstName if you ever add it */}
+                  {t.owner || t.firstName ? (
+                    <p className="text-xs text-neutral-400">
+                      {t.owner || t.firstName}
+                    </p>
+                  ) : null}
+                </div>
+                <span className={cx("px-2.5 py-1 rounded-full text-xs border font-semibold", tone)}>
+                  {letter}
+                </span>
+              </div>
+              <p className="text-sm text-neutral-300 mt-2 line-clamp-3">{summary}</p>
+            </div>
           </div>
-        </div>
-      )})}
+        );
+      })}
     </div>
   );
 }
@@ -574,3 +605,23 @@ const btnSecondary = "inline-flex items-center justify-center gap-2 px-3.5 py-2 
 
 /* For brevity in JSX above */
 function ButtonText() { return null; }
+
+// --- image helpers (add near API helpers) ---
+const teamSlug = (s: string) =>
+  (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+const reportCardUrl = (team: string, generatedAt?: string) =>
+  `${API_BASE}/draft/${DRAFT_ID}/report-card/${teamSlug(team)}.jpg` +
+  (generatedAt ? `?v=${encodeURIComponent(generatedAt)}` : "");
+
+const IMG_FALLBACK =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024'>
+      <rect width='100%' height='100%' fill='#141414'/>
+      <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'
+            font-family='system-ui,-apple-system,Segoe UI,Roboto' font-size='24' fill='#777'>
+        No card image
+      </text>
+    </svg>`
+  );
