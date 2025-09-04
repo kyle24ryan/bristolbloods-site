@@ -286,18 +286,30 @@ export default {
 
     if (url.pathname === "/health") return new Response("ok");
 
-    // --- Report-card admin routes: /draft/:id/*
+    // // --- Report-card admin routes: /draft/:id/*
+    // if (url.pathname.startsWith("/draft/")) {
+	  // const parts = url.pathname.split("/"); // ["", "draft", ":id", ...]
+	  // const draftId = parts[2] || "2025-bristol-bloods";
+	  // const id = env.DRAFT_ROOM.idFromName(draftId);
+	  // const stub = env.DRAFT_ROOM.get(id);
+	  // const r = await stub.fetch(req);
+	  // return withCORS(new Response(await r.text(), {
+    //     status: r.status,
+    //     headers: { "content-type": "application/json" }
+    //   }), req.headers.get("Origin"));
+    // }
+
     if (url.pathname.startsWith("/draft/")) {
-	  const parts = url.pathname.split("/"); // ["", "draft", ":id", ...]
-	  const draftId = parts[2] || "2025-bristol-bloods";
-	  const id = env.DRAFT_ROOM.idFromName(draftId);
-	  const stub = env.DRAFT_ROOM.get(id);
-	  const r = await stub.fetch(req);
-	  return withCORS(new Response(await r.text(), {
-        status: r.status,
-        headers: { "content-type": "application/json" }
-      }), req.headers.get("Origin"));
+      const parts   = url.pathname.split("/");
+      const draftId = parts[2] || "2025-bristol-bloods";
+      const id      = env.DRAFT_ROOM.idFromName(draftId);
+      const stub    = env.DRAFT_ROOM.get(id);
+
+      const r = await stub.fetch(req);  // DO returns the real response (image/json/etc.)
+      const resp = new Response(r.body, { status: r.status, headers: r.headers });
+      return withCORS(resp, req.headers.get("Origin"));
     }
+
     
     // Serve a cached image directly from R2: /image/kyle.png or /image/kyle
     if (url.pathname.startsWith("/image/")) {
@@ -761,6 +773,21 @@ export class DraftRoom implements DurableObject {
       }
       if (path.endsWith("/publish") && req.method === "POST") {
         return this.publish(req);
+      }
+      if (path.startsWith(`/draft/`) && path.includes(`/report-card/`) && req.method === "GET") {
+        const slugWithExt = decodeURIComponent(path.split("/report-card/")[1] || "");
+        const slug = slugWithExt.replace(/\.jpg$/i, "");
+        const key  = REPORT_KEYS.reportCard(slug); // "bristol-bloods-2025/cards/report/<slug>.jpg"
+
+        const obj = await this.env.CARDS.get(key);
+        if (!obj) return new Response("Not found", { status: 404 });
+
+        return new Response(obj.body, {
+          headers: {
+            "content-type": "image/jpeg",
+            "cache-control": "public, max-age=86400, s-maxage=86400"
+          }
+        });
       }
       return new Response("Not found", { status: 404 });
     } catch (e: any) {
