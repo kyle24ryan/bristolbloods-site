@@ -611,9 +611,8 @@ const teamSlug = (s: string) =>
   (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 const reportCardUrl = (team: string, generatedAt?: string) =>
-  `/report-card/${teamSlug(team)}.jpg${
-    generatedAt ? `?v=${encodeURIComponent(generatedAt)}` : ""
-  }`;
+  `${API_BASE}/draft/${DRAFT_ID}/report-card/${teamSlug(team)}.jpg` +
+  (generatedAt ? `?v=${encodeURIComponent(generatedAt)}` : "");
 
 const IMG_FALLBACK =
   "data:image/svg+xml;utf8," +
